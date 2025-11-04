@@ -177,3 +177,13 @@ func (r *Repository) GetUserCount() (int, error) {
 	}
 	return count, nil
 }
+
+func (r *Repository) GetPackCount() (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM packs`
+	err := r.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count packs: %w", err)
+	}
+	return count, nil
+}

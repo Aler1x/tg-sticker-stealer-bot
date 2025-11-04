@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	tg "gopkg.in/telebot.v4"
 
@@ -50,77 +49,15 @@ func IsAdmin(userID int64) bool {
 	return false
 }
 
-func HandleBroadcast(ctx tg.Context, repo *db.Repository) error {
-	if !IsAdmin(ctx.Sender().ID) {
-		return nil
-	}
-
-	args := strings.TrimPrefix(ctx.Text(), "/broadcast ")
-	if args == "/broadcast" || args == "" {
-		return ctx.Send(
-			"📢 *Broadcast Command*\n\n"+
-				"Usage: `/broadcast <message>`\n\n"+
-				"Send a message to all active users.",
-			&tg.SendOptions{ParseMode: tg.ModeMarkdown},
-		)
-	}
-
-	message := args
-
-	users, err := repo.GetAllActiveUsers()
-	if err != nil {
-		log.Printf("Failed to get users: %v", err)
-		return ctx.Send("❌ Failed to fetch users from database.")
-	}
-
-	if len(users) == 0 {
-		return ctx.Send("⚠️ No active users found.")
-	}
-
-	err = ctx.Send(fmt.Sprintf("📤 Broadcasting to %d users...", len(users)))
-	if err != nil {
-		return err
-	}
-
-	successCount := 0
-	failCount := 0
-	blockedCount := 0
-
-	for i, user := range users {
-		recipient := &tg.User{ID: user.UserID}
-		_, sendErr := ctx.Bot().Send(recipient, message)
-		if sendErr != nil {
-			errStr := sendErr.Error()
-			if strings.Contains(errStr, "blocked") || strings.Contains(errStr, "user is deactivated") {
-				blockedCount++
-			} else {
-				log.Printf("Failed to send to user %d (%s): %v", user.UserID, user.Username, sendErr)
-				failCount++
-			}
-		} else {
-			successCount++
-		}
-
-		if (i+1)%50 == 0 {
-			time.Sleep(50 * time.Millisecond)
-		}
-	}
-
-	result := fmt.Sprintf(
-		"✅ *Broadcast Complete*\n\n"+
-			"📬 Sent: `%d`\n"+
-			"🚫 Blocked: `%d`\n"+
-			"❌ Failed: `%d`\n"+
-			"📊 Total users: `%d`",
-		successCount, blockedCount, failCount, len(users),
-	)
-
-	return ctx.Send(result, &tg.SendOptions{ParseMode: tg.ModeMarkdown})
-}
-
 func HandleAdminStats(ctx tg.Context, repo *db.Repository) error {
 	if !IsAdmin(ctx.Sender().ID) {
 		return nil
+	}
+
+	packCount, err := repo.GetPackCount()
+	if err != nil {
+		log.Printf("Failed to get pack count: %v", err)
+		return ctx.Send("❌ Failed to fetch statistics.")
 	}
 
 	userCount, err := repo.GetUserCount()
@@ -130,11 +67,11 @@ func HandleAdminStats(ctx tg.Context, repo *db.Repository) error {
 	}
 
 	stats := fmt.Sprintf(
-		"📊 *Bot Statistics*\n\n"+
-			"👥 Active users: `%d`\n"+
-			"🕒 Server time: `%s`",
+		"*Bot Statistics*\n\n"+
+			"Active users: `%d`\n"+
+			"Total packs: `%d`",
 		userCount,
-		time.Now().Format("2006-01-02 15:04:05"),
+		packCount,
 	)
 
 	return ctx.Send(stats, &tg.SendOptions{ParseMode: tg.ModeMarkdown})

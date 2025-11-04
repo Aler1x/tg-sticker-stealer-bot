@@ -150,10 +150,6 @@ func main() {
 		return ctx.Send(utils.T(lang, "cancelled"))
 	})
 
-	bot.Handle("/broadcast", func(ctx tg.Context) error {
-		return handlers.HandleBroadcast(ctx, repo)
-	})
-
 	bot.Handle("/stats", func(ctx tg.Context) error {
 		return handlers.HandleAdminStats(ctx, repo)
 	})
