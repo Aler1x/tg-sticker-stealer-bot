@@ -1,6 +1,10 @@
 package db
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type PackType string
 
@@ -10,14 +14,19 @@ const (
 )
 
 type Pack struct {
-	ID           int64     `db:"id"`
-	UserID       int64     `db:"user_id"`
-	PackName     string    `db:"pack_name"`
-	PackTitle    string    `db:"pack_title"`
-	PackType     PackType  `db:"pack_type"`
-	PackLink     string    `db:"pack_link"`
-	StickerCount int       `db:"sticker_count"`
-	CreatedAt    time.Time `db:"created_at"`
+	ID           int64     `gorm:"primaryKey;autoIncrement"`
+	UserID       int64     `gorm:"not null;index;uniqueIndex:idx_user_pack"`
+	PackName     string    `gorm:"not null;uniqueIndex:idx_user_pack"`
+	PackTitle    string    `gorm:"not null"`
+	PackType     PackType  `gorm:"not null"`
+	PackLink     string    `gorm:"not null"`
+	StickerCount int       `gorm:"not null"`
+	CreatedAt    time.Time `gorm:"autoCreateTime;index"`
+}
+
+// TableName overrides the table name
+func (Pack) TableName() string {
+	return "packs"
 }
 
 type SubscriptionType string
@@ -31,31 +40,43 @@ const (
 )
 
 type SubscriptionPrice struct {
-	ID               int64            `db:"id"`
-	SubscriptionType SubscriptionType `db:"subscription_type"`
-	PriceStars       int              `db:"price_stars"`
-	Description      string           `db:"description"`
-	Value            int              `db:"value"`
-	UpdatedAt        time.Time        `db:"updated_at"`
+	ID               int64            `gorm:"primaryKey;autoIncrement"`
+	SubscriptionType SubscriptionType `gorm:"uniqueIndex;not null"`
+	PriceStars       int              `gorm:"not null"`
+	Description      string           `gorm:"not null"`
+	Value            int              `gorm:"not null"`
+	UpdatedAt        time.Time        `gorm:"autoUpdateTime"`
+}
+
+func (SubscriptionPrice) TableName() string {
+	return "subscription_prices"
 }
 
 type UserSubscription struct {
-	ID               int64            `db:"id"`
-	UserID           int64            `db:"user_id"`
-	SubscriptionType SubscriptionType `db:"subscription_type"`
-	RemainingCount   *int             `db:"remaining_count"`
-	ExpiresAt        *time.Time       `db:"expires_at"`
-	CreatedAt        time.Time        `db:"created_at"`
+	ID               int64            `gorm:"primaryKey;autoIncrement"`
+	UserID           int64            `gorm:"not null;index"`
+	SubscriptionType SubscriptionType `gorm:"not null"`
+	RemainingCount   *int             `gorm:"default:null"`
+	ExpiresAt        *time.Time       `gorm:"index;default:null"`
+	CreatedAt        time.Time        `gorm:"autoCreateTime"`
+}
+
+func (UserSubscription) TableName() string {
+	return "user_subscriptions"
 }
 
 type PaymentHistory struct {
-	ID                int64            `db:"id"`
-	UserID            int64            `db:"user_id"`
-	SubscriptionType  SubscriptionType `db:"subscription_type"`
-	PriceStars        int              `db:"price_stars"`
-	PaymentChargeID   *string          `db:"payment_charge_id"`
-	PaymentProvider   *string          `db:"payment_provider"`
-	Status            string           `db:"status"`
-	CreatedAt         time.Time        `db:"created_at"`
+	ID              int64            `gorm:"primaryKey;autoIncrement"`
+	UserID          int64            `gorm:"not null;index"`
+	SubscriptionType SubscriptionType `gorm:"not null"`
+	PriceStars      int              `gorm:"not null"`
+	PaymentChargeID *string          `gorm:"default:null"`
+	PaymentProvider *string          `gorm:"default:null"`
+	Status          string           `gorm:"not null;index"`
+	CreatedAt       time.Time        `gorm:"autoCreateTime"`
+}
+
+func (PaymentHistory) TableName() string {
+	return "payment_history"
 }
 
