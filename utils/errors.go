@@ -23,8 +23,8 @@ func NewBotError(message, i18nKey, errorCode string) *BotError {
 
 // FailFast panics if error is not nil
 func FailFast(err error) {
-	Logger("error", "Error", map[string]any{"error": err.Error()})
 	if err != nil {
+		Logger("error", "Error", map[string]any{"error": err})
 		panic(err)
 	}
 }
