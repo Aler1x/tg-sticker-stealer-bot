@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -29,7 +30,7 @@ func InitAdminIDs() {
 		}
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			utils.Logger("warn", "Invalid admin ID", map[string]any{	
+			utils.Logger("warn", "Invalid admin ID", map[string]any{
 				"adminId": idStr,
 				"error":   err.Error(),
 			})
@@ -44,12 +45,7 @@ func InitAdminIDs() {
 }
 
 func IsAdmin(userID int64) bool {
-	for _, id := range adminIDs {
-		if id == userID {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(adminIDs, userID)
 }
 
 func HandleAdminStats(ctx tg.Context, repo *db.Repository) error {

@@ -16,6 +16,14 @@ import (
 	tg "gopkg.in/telebot.v4"
 )
 
+var defaultCommands = []tg.Command{
+	{Text: "/start", Description: utils.T("en", "start-command")},
+	{Text: "/help", Description: utils.T("en", "help-command")},
+	{Text: "/list", Description: utils.T("en", "list-command")},
+	{Text: "/delete", Description: utils.T("en", "delete-command")},
+	{Text: "/cancel", Description: "Cancel current operation"},
+}
+
 func main() {
 	utils.Logger("info", "Starting bot...")
 
@@ -36,11 +44,11 @@ func main() {
 
 	// Configure poller based on environment
 	var poller tg.Poller
-	publicURL := os.Getenv("PUBLIC_URL")
+	publicURL := os.Getenv("RAILWAY_PUBLIC_DOMAIN")
 
 	if publicURL != "" {
 		// Use webhooks for production (Railway)
-		port := os.Getenv("PORT")
+		port := os.Getenv("RAILWAY_PORT")
 		if port == "" {
 			port = "8443"
 		}
@@ -103,19 +111,22 @@ func main() {
 		}
 	}))
 
-	bot.SetCommands([]tg.Command{
-		{Text: "/start", Description: utils.T("en", "start-command")},
-		{Text: "/help", Description: utils.T("en", "help-command")},
-		{Text: "/list", Description: utils.T("en", "list-command")},
-		{Text: "/delete", Description: utils.T("en", "delete-command")},
-		{Text: "/cancel", Description: "Cancel current operation"},
-	})
+	bot.SetCommands(defaultCommands)
 
 	bot.Handle("/start", func(ctx tg.Context) error {
 		lang := ctx.Message().Sender.LanguageCode
 		username := ctx.Message().Sender.Username
 		sessions.Clear(ctx.Sender().ID)
 		return ctx.Send(utils.T(lang, "welcome", username))
+	})
+
+	bot.Handle("/commands", func(ctx tg.Context) error {
+		if !handlers.IsAdmin(ctx.Sender().ID) {
+			return ctx.Send("You are not authorized to use this command")
+		}
+
+		bot.SetCommands(defaultCommands)
+		return ctx.Send("Commands updated")
 	})
 
 	bot.Handle("/help", func(ctx tg.Context) error {

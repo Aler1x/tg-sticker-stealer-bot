@@ -23,7 +23,7 @@ A Telegram bot written in Go that allows users to create copies of sticker packs
 - `/cancel` - Cancel current operation
 
 ### Admin Commands
-- `/broadcast <message>` - Send a message to all active users
+- `/commands` - Force update bot commands
 - `/stats` - View bot statistics
 
 ## Usage
@@ -99,10 +99,6 @@ The bot will automatically use **long polling mode** when `PUBLIC_URL` is not se
 ├── i18n/          # Internationalization
 │   ├── en.go         # English translations
 │   └── ua.go         # Ukrainian translations
-├── docs/          # Documentation
-│   ├── architecture.md              # Architecture details
-│   ├── railway-webhook-setup.md     # Railway deployment guide
-│   └── migration-announcement.md    # Migration message templates
 └── data/          # Data directory (temp files, database)
 ```
 
@@ -152,7 +148,7 @@ The bot is optimized for Railway deployment with webhooks:
 3. **Deploy from GitHub** (first deployment)
 4. **Get your Railway app URL** from the dashboard
 5. **Add the webhook URL**:
-   - `PUBLIC_URL` - Your Railway app URL (e.g., `https://your-app.railway.app`)
+   - `RAILWAY_PUBLIC_DOMAIN` - Your Railway app URL (e.g., `https://your-app.railway.app`)
 6. **Redeploy** - The bot will now use webhook mode
 
 A volume will be automatically mounted at `/app/data` to persist the database.
