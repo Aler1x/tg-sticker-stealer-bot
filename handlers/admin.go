@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	tg "gopkg.in/telebot.v4"
 
 	"tg-sticker-stiller-bot/db"
+	"tg-sticker-stiller-bot/utils"
 )
 
 var adminIDs []int64
@@ -17,7 +17,7 @@ var adminIDs []int64
 func InitAdminIDs() {
 	adminIDsStr := os.Getenv("ADMIN_IDS")
 	if adminIDsStr == "" {
-		log.Println("Warning: ADMIN_IDS not set, broadcast feature will be disabled")
+		utils.Logger("warn", "ADMIN_IDS not set, broadcast feature will be disabled")
 		return
 	}
 
@@ -29,14 +29,17 @@ func InitAdminIDs() {
 		}
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			log.Printf("Warning: Invalid admin ID '%s': %v", idStr, err)
+			utils.Logger("warn", "Invalid admin ID", map[string]any{	
+				"adminId": idStr,
+				"error":   err.Error(),
+			})
 			continue
 		}
 		adminIDs = append(adminIDs, id)
 	}
 
 	if len(adminIDs) > 0 {
-		log.Printf("Loaded %d admin ID(s)", len(adminIDs))
+		utils.Logger("info", "Admin IDs loaded", map[string]any{"count": len(adminIDs)})
 	}
 }
 
@@ -56,13 +59,13 @@ func HandleAdminStats(ctx tg.Context, repo *db.Repository) error {
 
 	packCount, err := repo.GetPackCount()
 	if err != nil {
-		log.Printf("Failed to get pack count: %v", err)
+		utils.Logger("error", "Failed to get pack count", map[string]any{"error": err.Error()})
 		return ctx.Send("❌ Failed to fetch statistics.")
 	}
 
 	userCount, err := repo.GetUserCount()
 	if err != nil {
-		log.Printf("Failed to get user count: %v", err)
+		utils.Logger("error", "Failed to get user count", map[string]any{"error": err.Error()})
 		return ctx.Send("❌ Failed to fetch statistics.")
 	}
 

@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"tg-sticker-stiller-bot/types"
 	"tg-sticker-stiller-bot/utils"
@@ -15,14 +14,14 @@ func FetchStickerSet(bot *tg.Bot, name string) (*types.StickerSet, error) {
 		stickerSet, err := bot.StickerSet(name)
 		if err != nil {
 			if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "404") {
-				log.Printf("Sticker set not found: %s", name)
+				utils.Logger("warn", "Sticker set not found", map[string]any{"name": name})
 				return nil, utils.NewBotError(
 					fmt.Sprintf("Sticker set not found: %s", name),
 					"sticker-not-found",
 					"STICKER_SET_NOT_FOUND",
 				)
 			}
-			log.Printf("Telegram API error fetching sticker set: %v", err)
+			utils.Logger("error", "Telegram API error fetching sticker set", map[string]any{"error": err.Error()})
 			return nil, utils.NewBotError(
 				fmt.Sprintf("Telegram API error: %v", err),
 				"fetch-failed",
@@ -43,14 +42,14 @@ func FetchEmojiSet(bot *tg.Bot, name string) (*types.EmojiSet, error) {
 		stickerSet, err := bot.StickerSet(name)
 		if err != nil {
 			if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "404") {
-				log.Printf("Emoji set not found: %s", name)
+				utils.Logger("warn", "Emoji set not found", map[string]any{"name": name})
 				return nil, utils.NewBotError(
 					fmt.Sprintf("Emoji set not found: %s", name),
 					"emoji-not-found",
 					"EMOJI_SET_NOT_FOUND",
 				)
 			}
-			log.Printf("Telegram API error fetching emoji set: %v", err)
+			utils.Logger("error", "Telegram API error fetching emoji set", map[string]any{"error": err.Error()})
 			return nil, utils.NewBotError(
 				fmt.Sprintf("Telegram API error: %v", err),
 				"fetch-emoji-failed",

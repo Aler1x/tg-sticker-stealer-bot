@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -18,20 +17,20 @@ import (
 )
 
 func main() {
-	log.Println("Starting bot...")
+	utils.Logger("info", "Starting bot...")
 
 	token := os.Getenv("TOKEN")
 	if token == "" {
-		log.Fatal("TOKEN environment variable is not set")
+		utils.Fatal("TOKEN environment variable is not set")
 	}
 
 	if err := utils.EnsureTempDir(); err != nil {
-		log.Fatalf("Failed to create temp directory: %v", err)
+		utils.Fatal("Failed to create temp directory", map[string]any{"error": err.Error()})
 	}
 
 	repo, err := db.NewRepository("./data/packs.db")
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		utils.Fatal("Failed to initialize database", map[string]any{"error": err.Error()})
 	}
 	defer repo.Close()
 
@@ -47,7 +46,7 @@ func main() {
 		}
 
 		webhookURL := publicURL + "/webhook"
-		log.Printf("Using webhook mode: %s", webhookURL)
+		utils.Logger("info", "Using webhook mode", map[string]any{"url": webhookURL})
 
 		poller = &tg.Webhook{
 			Listen:   "0.0.0.0:" + port,
@@ -55,7 +54,7 @@ func main() {
 		}
 	} else {
 		// Use long polling for local development
-		log.Println("Using long polling mode (local development)")
+		utils.Logger("info", "Using long polling mode (local development)")
 		poller = &tg.LongPoller{Timeout: 10 * time.Second}
 	}
 
@@ -73,8 +72,11 @@ func main() {
 	bot.Use(tg.MiddlewareFunc(func(next tg.HandlerFunc) tg.HandlerFunc {
 		return func(ctx tg.Context) error {
 			if ctx.Message() != nil {
-				log.Printf("User: %d, Message ID: %d, Text: %s",
-					ctx.Sender().ID, ctx.Message().ID, ctx.Message().Text)
+				utils.Logger("info", "Message received", map[string]any{
+					"userId":    ctx.Sender().ID,
+					"messageId": ctx.Message().ID,
+					"text":      ctx.Message().Text,
+				})
 			}
 			return next(ctx)
 		}
@@ -91,7 +93,10 @@ func main() {
 					LanguageCode: ctx.Sender().LanguageCode,
 				}
 				if err := repo.UpsertUser(user); err != nil {
-					log.Printf("Failed to track user %d: %v", ctx.Sender().ID, err)
+					utils.Logger("error", "Failed to track user", map[string]any{
+						"userId": ctx.Sender().ID,
+						"error":  err.Error(),
+					})
 				}
 			}
 			return next(ctx)
@@ -187,9 +192,11 @@ func main() {
 	})
 
 	go func() {
-		log.Printf("Bot @%s started successfully\n", name)
+		utils.Logger("info", "Bot started successfully", map[string]any{"username": name})
 		if publicURL != "" {
-			log.Printf("Webhook endpoint: %s/webhook", publicURL)
+			utils.Logger("info", "Webhook endpoint configured", map[string]any{
+				"endpoint": publicURL + "/webhook",
+			})
 		}
 		bot.Start()
 	}()
@@ -198,8 +205,8 @@ func main() {
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 
 	<-stopChan
-	log.Println("Received an interrupt, stopping...")
+	utils.Logger("warn", "Received interrupt signal, stopping...")
 
 	bot.Stop()
-	log.Println("Bot stopped")
+	utils.Logger("info", "Bot stopped")
 }

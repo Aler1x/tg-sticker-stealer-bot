@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"tg-sticker-stiller-bot/db"
 	"tg-sticker-stiller-bot/services"
@@ -22,7 +21,10 @@ func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot
 	if packType == types.StickerTypeEmoji {
 		emojiSet, fetchErr := services.FetchEmojiSet(bot, packName)
 		if fetchErr != nil {
-			log.Printf("Error fetching emoji pack %s: %v", packName, fetchErr)
+			utils.Logger("error", "Error fetching emoji pack", map[string]any{
+				"packName": packName,
+				"error":    fetchErr.Error(),
+			})
 			return ctx.Send(utils.T(lang, "error"))
 		}
 		stickerSet = &types.StickerSet{
@@ -33,7 +35,10 @@ func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot
 	} else {
 		stickerSet, err = services.FetchStickerSet(bot, packName)
 		if err != nil {
-			log.Printf("Error fetching sticker pack %s: %v", packName, err)
+			utils.Logger("error", "Error fetching sticker pack", map[string]any{
+				"packName": packName,
+				"error":    err.Error(),
+			})
 			return ctx.Send(utils.T(lang, "error"))
 		}
 	}
@@ -81,7 +86,7 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 
 	progressMsg, err := ctx.Bot().Send(ctx.Recipient(), utils.T(lang, "creating-pack", utils.T(lang, packTypeKey)))
 	if err != nil {
-		log.Printf("Failed to send progress message: %v", err)
+		utils.Logger("warn", "Failed to send progress message", map[string]any{"error": err.Error()})
 	}
 
 	progressCallback := func(current, total int) {
@@ -89,7 +94,7 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 			newText := fmt.Sprintf("📦 Processing: %d/%d items...", current, total)
 			_, err := ctx.Bot().Edit(progressMsg, newText)
 			if err != nil {
-				log.Printf("Failed to update progress: %v", err)
+				utils.Logger("debug", "Failed to update progress", map[string]any{"error": err.Error()})
 			}
 		}
 	}
@@ -105,7 +110,10 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 			}
 		}
 		sessions.Clear(userID)
-		log.Printf("Error creating sticker set: %v", err)
+		utils.Logger("error", "Error creating sticker set", map[string]any{
+			"userId": userID,
+			"error":  err.Error(),
+		})
 		return ctx.Send(utils.T(lang, "error"))
 	}
 
@@ -124,7 +132,10 @@ func HandleListPacks(ctx tg.Context, repo *db.Repository) error {
 
 	packs, err := repo.GetPacksByUserID(userID)
 	if err != nil {
-		log.Printf("Error getting packs for user %d: %v", userID, err)
+		utils.Logger("error", "Error getting packs for user", map[string]any{
+			"userId": userID,
+			"error":  err.Error(),
+		})
 		return ctx.Send(utils.T(lang, "error"))
 	}
 
@@ -150,7 +161,11 @@ func HandleDeletePack(ctx tg.Context, packID int64, repo *db.Repository) error {
 
 	err := repo.DeletePack(packID, userID)
 	if err != nil {
-		log.Printf("Error deleting pack %d for user %d: %v", packID, userID, err)
+		utils.Logger("error", "Error deleting pack", map[string]any{
+			"packId": packID,
+			"userId": userID,
+			"error":  err.Error(),
+		})
 		return ctx.Send(utils.T(lang, "delete-not-found"))
 	}
 

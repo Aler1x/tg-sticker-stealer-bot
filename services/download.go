@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -89,7 +88,10 @@ func DownloadAllStickers(bot *tg.Bot, stickers []tg.Sticker) []types.DownloadedS
 
 			filePath, err := DownloadSticker(bot, s)
 			if err != nil {
-				log.Printf("Failed to download sticker %s, skipping: %v", s.FileID, err)
+				utils.Logger("warn", "Failed to download sticker, skipping", map[string]any{
+					"fileId": s.FileID,
+					"error":  err.Error(),
+				})
 				results[index] = nil
 				return
 			}
