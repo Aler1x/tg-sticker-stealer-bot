@@ -16,6 +16,14 @@ import (
 	tg "gopkg.in/telebot.v4"
 )
 
+var defaultCommands = []tg.Command{
+	{Text: "/start", Description: utils.T("en", "start-command")},
+	{Text: "/help", Description: utils.T("en", "help-command")},
+	{Text: "/list", Description: utils.T("en", "list-command")},
+	{Text: "/delete", Description: utils.T("en", "delete-command")},
+	{Text: "/cancel", Description: "Cancel current operation"},
+}
+
 func main() {
 	utils.Logger("info", "Starting bot...")
 
@@ -103,13 +111,7 @@ func main() {
 		}
 	}))
 
-	bot.SetCommands([]tg.Command{
-		{Text: "/start", Description: utils.T("en", "start-command")},
-		{Text: "/help", Description: utils.T("en", "help-command")},
-		{Text: "/list", Description: utils.T("en", "list-command")},
-		{Text: "/delete", Description: utils.T("en", "delete-command")},
-		{Text: "/cancel", Description: "Cancel current operation"},
-	})
+	bot.SetCommands(defaultCommands)
 
 	bot.Handle("/start", func(ctx tg.Context) error {
 		lang := ctx.Message().Sender.LanguageCode
@@ -123,13 +125,7 @@ func main() {
 			return ctx.Send("You are not authorized to use this command")
 		}
 
-		bot.SetCommands([]tg.Command{
-			{Text: "/start", Description: utils.T("en", "start-command")},
-			{Text: "/help", Description: utils.T("en", "help-command")},
-			{Text: "/list", Description: utils.T("en", "list-command")},
-			{Text: "/delete", Description: utils.T("en", "delete-command")},
-			{Text: "/cancel", Description: "Cancel current operation"},
-		})
+		bot.SetCommands(defaultCommands)
 		return ctx.Send("Commands updated")
 	})
 
