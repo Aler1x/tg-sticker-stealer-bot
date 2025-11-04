@@ -33,4 +33,5 @@ var En = map[string]string{
 	"delete-success":   "✅ Pack deleted successfully!",
 	"delete-not-found": "Pack not found or you don't have permission to delete it.",
 	"delete-usage":     "Usage: /delete <pack_id>\n\nUse /list to see your packs and their IDs.",
+	"cancel-command":   "Cancel current operation",
 }

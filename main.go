@@ -16,12 +16,14 @@ import (
 	tg "gopkg.in/telebot.v4"
 )
 
-var defaultCommands = []tg.Command{
-	{Text: "/start", Description: utils.T("en", "start-command")},
-	{Text: "/help", Description: utils.T("en", "help-command")},
-	{Text: "/list", Description: utils.T("en", "list-command")},
-	{Text: "/delete", Description: utils.T("en", "delete-command")},
-	{Text: "/cancel", Description: "Cancel current operation"},
+func GetCommands(lang string) []tg.Command {
+	return []tg.Command{
+		{Text: "/start", Description: utils.T(lang, "start-command")},
+		{Text: "/help", Description: utils.T(lang, "help-command")},
+		{Text: "/list", Description: utils.T(lang, "list-command")},
+		{Text: "/delete", Description: utils.T(lang, "delete-command")},
+		{Text: "/cancel", Description: utils.T(lang, "cancel-command")},
+	}
 }
 
 func main() {
@@ -111,8 +113,6 @@ func main() {
 		}
 	}))
 
-	bot.SetCommands(defaultCommands)
-
 	bot.Handle("/start", func(ctx tg.Context) error {
 		lang := ctx.Message().Sender.LanguageCode
 		username := ctx.Message().Sender.Username
@@ -125,7 +125,16 @@ func main() {
 			return ctx.Send("You are not authorized to use this command")
 		}
 
-		bot.SetCommands(defaultCommands)
+		langs := []string{"en", "ua"}
+		for _, lang := range langs {
+			bot.SetCommands(
+				GetCommands(lang),
+				tg.CommandScope{Type: tg.CommandScopeAllPrivateChats},
+				lang,
+			)
+			utils.Logger("info", "Commands updated", map[string]any{"lang": lang})
+		}
+
 		return ctx.Send("Commands updated")
 	})
 
