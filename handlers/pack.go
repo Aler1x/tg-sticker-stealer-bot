@@ -11,9 +11,27 @@ import (
 	tg "gopkg.in/telebot.v4"
 )
 
-func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot, sessions *services.SessionStore) error {
+func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot, sessions *services.SessionStore, repo *db.Repository) error {
 	lang := ctx.Message().Sender.LanguageCode
 	userID := ctx.Sender().ID
+
+	// Check subscription for emoji packs only
+	if packType == types.StickerTypeEmoji {
+		sub, err := CheckSubscription(userID, repo)
+		if err != nil {
+			utils.LogError("Failed to check subscription", err)
+			return ctx.Send("Error checking subscription status. Please try again.")
+		}
+
+		if sub == nil {
+			return ctx.Send(
+				"🔒 *Emoji stealing requires a subscription!*\n\n" +
+					"Get access to steal custom emoji packs by choosing a subscription plan.\n\n" +
+					"Use /subscribe to view available options!",
+				tg.ModeMarkdown,
+			)
+		}
+	}
 
 	var stickerSet *types.StickerSet
 	var err error
@@ -115,6 +133,23 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 			"error":  err.Error(),
 		})
 		return ctx.Send(utils.T(lang, "error"))
+	}
+
+	// Consume subscription for emoji packs
+	if session.PackType == types.StickerTypeEmoji {
+		sub, err := CheckSubscription(userID, repo)
+		if err != nil {
+			utils.LogError("Failed to check subscription after creation", err)
+		} else if sub != nil {
+			if err := ConsumeSubscription(sub, repo); err != nil {
+				utils.LogError("Failed to consume subscription", err)
+			} else {
+				utils.Logger("info", "Subscription consumed", map[string]any{
+					"userId":           userID,
+					"subscriptionType": sub.SubscriptionType,
+				})
+			}
+		}
 	}
 
 	if progressMsg != nil {

@@ -187,3 +187,148 @@ func (r *Repository) GetPackCount() (int, error) {
 	}
 	return count, nil
 }
+
+// Subscription methods
+
+func (r *Repository) GetSubscriptionPrice(subType SubscriptionType) (*SubscriptionPrice, error) {
+	query := `
+		SELECT id, subscription_type, price_stars, description, value, updated_at
+		FROM subscription_prices
+		WHERE subscription_type = ?
+	`
+	var price SubscriptionPrice
+	err := r.db.QueryRow(query, subType).Scan(
+		&price.ID, &price.SubscriptionType, &price.PriceStars, &price.Description, &price.Value, &price.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subscription price: %w", err)
+	}
+	return &price, nil
+}
+
+func (r *Repository) GetAllSubscriptionPrices() ([]SubscriptionPrice, error) {
+	query := `
+		SELECT id, subscription_type, price_stars, description, value, updated_at
+		FROM subscription_prices
+		ORDER BY price_stars ASC
+	`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query subscription prices: %w", err)
+	}
+	defer rows.Close()
+
+	var prices []SubscriptionPrice
+	for rows.Next() {
+		var price SubscriptionPrice
+		err := rows.Scan(&price.ID, &price.SubscriptionType, &price.PriceStars, &price.Description, &price.Value, &price.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan subscription price: %w", err)
+		}
+		prices = append(prices, price)
+	}
+
+	return prices, rows.Err()
+}
+
+func (r *Repository) UpdateSubscriptionPrice(subType SubscriptionType, priceStars int) error {
+	query := `
+		UPDATE subscription_prices
+		SET price_stars = ?, updated_at = CURRENT_TIMESTAMP
+		WHERE subscription_type = ?
+	`
+	result, err := r.db.Exec(query, priceStars, subType)
+	if err != nil {
+		return fmt.Errorf("failed to update subscription price: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("subscription type not found")
+	}
+
+	return nil
+}
+
+func (r *Repository) CreateUserSubscription(sub *UserSubscription) error {
+	query := `
+		INSERT INTO user_subscriptions (user_id, subscription_type, remaining_count, expires_at)
+		VALUES (?, ?, ?, ?)
+	`
+	result, err := r.db.Exec(query, sub.UserID, sub.SubscriptionType, sub.RemainingCount, sub.ExpiresAt)
+	if err != nil {
+		return fmt.Errorf("failed to create subscription: %w", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert id: %w", err)
+	}
+
+	sub.ID = id
+	return nil
+}
+
+func (r *Repository) GetActiveSubscription(userID int64) (*UserSubscription, error) {
+	query := `
+		SELECT id, user_id, subscription_type, remaining_count, expires_at, created_at
+		FROM user_subscriptions
+		WHERE user_id = ?
+		AND (
+			(remaining_count IS NOT NULL AND remaining_count > 0)
+			OR (expires_at IS NOT NULL AND expires_at > CURRENT_TIMESTAMP)
+		)
+		ORDER BY created_at DESC
+		LIMIT 1
+	`
+	var sub UserSubscription
+	err := r.db.QueryRow(query, userID).Scan(
+		&sub.ID, &sub.UserID, &sub.SubscriptionType, &sub.RemainingCount, &sub.ExpiresAt, &sub.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active subscription: %w", err)
+	}
+	return &sub, nil
+}
+
+func (r *Repository) DecrementSubscriptionCount(subID int64) error {
+	query := `
+		UPDATE user_subscriptions
+		SET remaining_count = remaining_count - 1
+		WHERE id = ? AND remaining_count > 0
+	`
+	_, err := r.db.Exec(query, subID)
+	if err != nil {
+		return fmt.Errorf("failed to decrement subscription count: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) CreatePaymentHistory(payment *PaymentHistory) error {
+	query := `
+		INSERT INTO payment_history (user_id, subscription_type, price_stars, payment_charge_id, payment_provider, status)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	result, err := r.db.Exec(query, payment.UserID, payment.SubscriptionType, payment.PriceStars, payment.PaymentChargeID, payment.PaymentProvider, payment.Status)
+	if err != nil {
+		return fmt.Errorf("failed to create payment history: %w", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert id: %w", err)
+	}
+
+	payment.ID = id
+	return nil
+}

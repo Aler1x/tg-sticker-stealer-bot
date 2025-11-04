@@ -19,9 +19,19 @@ import (
 var defaultCommands = []tg.Command{
 	{Text: "/start", Description: utils.T("en", "start-command")},
 	{Text: "/help", Description: utils.T("en", "help-command")},
+	{Text: "/subscribe", Description: "View subscription plans"},
+	{Text: "/mysub", Description: "Check your subscription status"},
 	{Text: "/list", Description: utils.T("en", "list-command")},
 	{Text: "/delete", Description: utils.T("en", "delete-command")},
 	{Text: "/cancel", Description: "Cancel current operation"},
+}
+
+var adminCommands = []tg.Command{
+	{Text: "/stats", Description: "View bot statistics (admin)"},
+	{Text: "/prices", Description: "View subscription prices (admin)"},
+	{Text: "/setprice", Description: "Set subscription price (admin)"},
+	{Text: "/grant", Description: "Grant subscription to user (admin)"},
+	{Text: "/commands", Description: "Update bot commands (admin)"},
 }
 
 func main() {
@@ -170,6 +180,41 @@ func main() {
 		return handlers.HandleAdminStats(ctx, repo)
 	})
 
+	// Subscription commands
+	bot.Handle("/subscribe", func(ctx tg.Context) error {
+		return handlers.ShowSubscriptionPlans(ctx, repo)
+	})
+
+	bot.Handle("/mysub", func(ctx tg.Context) error {
+		return handlers.HandleCheckMySubscription(ctx, repo)
+	})
+
+	// Admin subscription commands
+	bot.Handle("/prices", func(ctx tg.Context) error {
+		return handlers.HandleAdminViewPrices(ctx, repo)
+	})
+
+	bot.Handle("/setprice", func(ctx tg.Context) error {
+		return handlers.HandleAdminSetPrice(ctx, repo)
+	})
+
+	bot.Handle("/grant", func(ctx tg.Context) error {
+		return handlers.HandleAdminGrantSubscription(ctx, repo)
+	})
+
+	// Payment handlers
+	bot.Handle(tg.OnCallback, func(ctx tg.Context) error {
+		return handlers.HandleSubscriptionCallback(ctx, repo)
+	})
+
+	bot.Handle(tg.OnCheckout, func(ctx tg.Context) error {
+		return handlers.HandlePreCheckoutQuery(ctx, repo)
+	})
+
+	bot.Handle(tg.OnPayment, func(ctx tg.Context) error {
+		return handlers.HandleSuccessfulPayment(ctx, repo)
+	})
+
 	bot.Handle(tg.OnText, func(ctx tg.Context) error {
 		text := ctx.Text()
 		userID := ctx.Sender().ID
@@ -187,7 +232,7 @@ func main() {
 				if packName == "" {
 					return ctx.Send(utils.T(lang, "invalid-link"))
 				}
-				return handlers.HandlePack(ctx, packName, types.StickerTypeRegular, bot, sessions)
+				return handlers.HandlePack(ctx, packName, types.StickerTypeRegular, bot, sessions, repo)
 			}
 
 			if utils.IsEmojiPack(text) {
@@ -195,7 +240,7 @@ func main() {
 				if packName == "" {
 					return ctx.Send(utils.T(lang, "invalid-link"))
 				}
-				return handlers.HandlePack(ctx, packName, types.StickerTypeEmoji, bot, sessions)
+				return handlers.HandlePack(ctx, packName, types.StickerTypeEmoji, bot, sessions, repo)
 			}
 
 			return ctx.Send(utils.T(lang, "invalid-link"))
