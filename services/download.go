@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -80,32 +79,34 @@ func DownloadSticker(bot *tg.Bot, sticker tg.Sticker) (string, error) {
 
 func DownloadAllStickers(bot *tg.Bot, stickers []tg.Sticker) []types.DownloadedSticker {
 	var wg sync.WaitGroup
-	results := make(chan *types.DownloadedSticker, len(stickers))
+	results := make([]*types.DownloadedSticker, len(stickers))
 
-	for _, sticker := range stickers {
+	for i, sticker := range stickers {
 		wg.Add(1)
-		go func(s tg.Sticker) {
+		go func(index int, s tg.Sticker) {
 			defer wg.Done()
 
 			filePath, err := DownloadSticker(bot, s)
 			if err != nil {
-				log.Printf("Failed to download sticker %s, skipping: %v", s.FileID, err)
-				results <- nil
+				utils.Logger("warn", "Failed to download sticker, skipping", map[string]any{
+					"fileId": s.FileID,
+					"error":  err.Error(),
+				})
+				results[index] = nil
 				return
 			}
 
-			results <- &types.DownloadedSticker{
+			results[index] = &types.DownloadedSticker{
 				Path:    filePath,
 				Sticker: s,
 			}
-		}(sticker)
+		}(i, sticker)
 	}
 
 	wg.Wait()
-	close(results)
 
 	downloaded := []types.DownloadedSticker{}
-	for result := range results {
+	for _, result := range results {
 		if result != nil {
 			downloaded = append(downloaded, *result)
 		}

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -18,7 +17,7 @@ const (
 
 func EnsureTempDir() error {
 	if err := os.MkdirAll(TempDir, 0755); err != nil {
-		log.Printf("Failed to create temp directory: %v", err)
+		Logger("error", "Failed to create temp directory", map[string]any{"error": err.Error()})
 		return err
 	}
 	return nil
@@ -39,7 +38,11 @@ func WithRetry[T any](fn func() (T, error)) (T, error) {
 		}
 
 		if attempt < MaxRetries-1 {
-			log.Printf("Attempt %d failed: %v. Retrying in %v...", attempt+1, err, RetryDelay)
+			Logger("warn", "Retry attempt failed", map[string]any{
+				"attempt": attempt + 1,
+				"error":   err.Error(),
+				"delay":   RetryDelay.String(),
+			})
 			time.Sleep(RetryDelay)
 		}
 	}
@@ -70,7 +73,10 @@ func CleanupFiles(filePaths []string) {
 			defer wg.Done()
 
 			if err := os.Remove(fp); err != nil {
-				log.Printf("Failed to delete file %s: %v", fp, err)
+				Logger("warn", "Failed to delete file", map[string]any{
+					"filePath": fp,
+					"error":    err.Error(),
+				})
 			}
 		}(filePath)
 	}

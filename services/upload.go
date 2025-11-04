@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"tg-sticker-stiller-bot/db"
 	"tg-sticker-stiller-bot/types"
@@ -17,7 +16,7 @@ type ProgressCallback func(current, total int)
 func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, stickers []tg.Sticker, stickerType types.StickerType, repo *db.Repository, progressCallback ProgressCallback) (string, error) {
 	downloadedStickers := DownloadAllStickers(bot, stickers)
 	if len(downloadedStickers) == 0 {
-		log.Printf("No stickers could be downloaded for user %d", userID)
+		utils.Logger("error", "No stickers could be downloaded", map[string]any{"userId": userID})
 		return "", fmt.Errorf("no stickers could be downloaded")
 	}
 
@@ -70,14 +69,20 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 	err := bot.CreateStickerSet(user, stickerSet)
 	if err != nil {
 		if isNameTakenError(err) {
-			log.Printf("Sticker set name already exists: %s for user %d", title, userID)
+			utils.Logger("warn", "Sticker set name already exists", map[string]any{
+				"title":  title,
+				"userId": userID,
+			})
 			return "", utils.NewBotError(
 				fmt.Sprintf("Sticker set name already exists: %s", title),
 				"name-taken",
 				"STICKER_SET_NAME_TAKEN",
 			)
 		}
-		log.Printf("Failed to create sticker set: %v", err)
+		utils.Logger("error", "Failed to create sticker set", map[string]any{
+			"userId": userID,
+			"error":  err.Error(),
+		})
 		return "", err
 	}
 
@@ -105,7 +110,11 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 
 		err := bot.AddStickerToSet(user, setName, inputSticker)
 		if err != nil {
-			log.Printf("Failed to add sticker %d/%d to set: %v", i+1, totalStickers, err)
+			utils.Logger("warn", "Failed to add sticker to set", map[string]any{
+				"current": i + 1,
+				"total":   totalStickers,
+				"error":   err.Error(),
+			})
 			// Continue adding other stickers even if one fails
 		}
 
@@ -132,7 +141,7 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 			StickerCount: len(downloadedStickers),
 		}
 		if err := repo.CreatePack(pack); err != nil {
-			log.Printf("Failed to save pack to database: %v", err)
+			utils.Logger("error", "Failed to save pack to database", map[string]any{"error": err.Error()})
 		}
 	}
 
