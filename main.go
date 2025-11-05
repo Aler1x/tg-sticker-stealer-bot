@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
@@ -127,15 +128,18 @@ func main() {
 
 		langs := []string{"en", "ua"}
 		for _, lang := range langs {
-			bot.SetCommands(
+			err := bot.SetCommands(
 				GetCommands(lang),
 				tg.CommandScope{Type: tg.CommandScopeAllPrivateChats},
 				lang,
 			)
+			if err != nil {
+				utils.Logger("error", "Failed to update commands", map[string]any{"lang": lang, "error": err.Error()})
+				return ctx.Send(fmt.Sprintf("Failed to update commands for %s: %s", lang, err.Error()))
+			}
 			utils.Logger("info", "Commands updated", map[string]any{"lang": lang})
 		}
-
-		return ctx.Send("Commands updated")
+		return ctx.Send("Commands successfully updated")
 	})
 
 	bot.Handle("/help", func(ctx tg.Context) error {
