@@ -33,4 +33,5 @@ var Ua = map[string]string{
 	"delete-success":   "✅ Пакунок видалено успішно!",
 	"delete-not-found": "Пакунок не знайдено або у вас немає дозволу на його видалення.",
 	"delete-usage":     "Використання: /delete <pack_id>\n\nВикористайте /list щоб побачити ваші пакунки та їх ID.",
+	"cancel-command":   "Скасувати поточну операцію",
 }
