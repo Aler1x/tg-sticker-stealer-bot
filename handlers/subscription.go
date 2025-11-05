@@ -131,7 +131,7 @@ func HandleSuccessfulPayment(c tele.Context, repo *db.Repository) error {
 		SubscriptionType: subType,
 	}
 
-	// Determine if it's count-based or time-based
+	// Determine if it's count-based, time-based, or infinity
 	switch subType {
 	case db.SubscriptionOneSteal, db.SubscriptionTenSteals:
 		// Count-based subscription
@@ -141,6 +141,11 @@ func HandleSuccessfulPayment(c tele.Context, repo *db.Repository) error {
 	case db.SubscriptionWeek, db.SubscriptionMonth, db.SubscriptionYear:
 		// Time-based subscription
 		expiresAt := time.Now().AddDate(0, 0, price.Value)
+		userSub.ExpiresAt = &expiresAt
+		userSub.RemainingCount = nil
+	case db.SubscriptionInfinity:
+		// Infinity subscription - set expiry to 100 years from now
+		expiresAt := time.Now().AddDate(100, 0, 0)
 		userSub.ExpiresAt = &expiresAt
 		userSub.RemainingCount = nil
 	}
@@ -180,6 +185,11 @@ func HandleSuccessfulPayment(c tele.Context, repo *db.Repository) error {
 				"You can now steal emoji by sending me an emoji pack link!",
 			*userSub.RemainingCount,
 		)
+	} else if subType == db.SubscriptionInfinity {
+		confirmMessage = "✅ *Payment Successful!*\n\n" +
+			"Your *LIFETIME* subscription is now active!\n" +
+			"♾️ Unlimited emoji steals forever!\n\n" +
+			"You can now steal emoji by sending me an emoji pack link!"
 	} else {
 		confirmMessage = fmt.Sprintf(
 			"✅ *Payment Successful!*\n\n"+
@@ -239,6 +249,8 @@ func getSubscriptionEmoji(subType db.SubscriptionType) string {
 		return "📆"
 	case db.SubscriptionYear:
 		return "🎊"
+	case db.SubscriptionInfinity:
+		return "♾️"
 	default:
 		return "💎"
 	}
@@ -273,6 +285,16 @@ func HandleCheckMySubscription(c tele.Context, repo *db.Repository) error {
 			*sub.RemainingCount,
 			sub.CreatedAt.Format("2006-01-02 15:04"),
 		)
+	} else if sub.SubscriptionType == db.SubscriptionInfinity {
+		message = fmt.Sprintf(
+			"%s *LIFETIME Subscription*\n\n"+
+				"Plan: %s\n"+
+				"Status: ♾️ Unlimited Forever\n"+
+				"Activated: %s",
+			emoji,
+			sub.SubscriptionType,
+			sub.CreatedAt.Format("2006-01-02 15:04"),
+		)
 	} else {
 		message = fmt.Sprintf(
 			"%s *Active Subscription*\n\n"+
@@ -301,11 +323,13 @@ func HandleAdminGrantSubscription(c tele.Context, repo *db.Repository) error {
 			"Usage: /grant <user_id> <subscription_type> [value]\n\n"+
 				"Subscription types:\n"+
 				"• one_steal, ten_steals - count based\n"+
-				"• week, month, year - time based\n\n"+
+				"• week, month, year - time based\n"+
+				"• infinity - lifetime unlimited\n\n"+
 				"Examples:\n"+
 				"/grant 123456789 month\n"+
 				"/grant 123456789 ten_steals\n"+
-				"/grant 123456789 one_steal 5 (custom count)",
+				"/grant 123456789 one_steal 5 (custom count)\n"+
+				"/grant 123456789 infinity",
 		)
 	}
 
@@ -347,6 +371,10 @@ func HandleAdminGrantSubscription(c tele.Context, repo *db.Repository) error {
 		// Time-based
 		expiresAt := time.Now().AddDate(0, 0, price.Value)
 		userSub.ExpiresAt = &expiresAt
+	case db.SubscriptionInfinity:
+		// Infinity subscription - set expiry to 100 years from now
+		expiresAt := time.Now().AddDate(100, 0, 0)
+		userSub.ExpiresAt = &expiresAt
 	default:
 		return c.Send("Invalid subscription type")
 	}
@@ -376,6 +404,14 @@ func HandleAdminGrantSubscription(c tele.Context, repo *db.Repository) error {
 				"Remaining: %d steals",
 			userID, subType, *userSub.RemainingCount,
 		)
+	} else if subType == db.SubscriptionInfinity {
+		confirmMsg = fmt.Sprintf(
+			"✅ LIFETIME Subscription granted!\n\n"+
+				"User ID: %d\n"+
+				"Type: %s\n"+
+				"Status: ♾️ Unlimited Forever",
+			userID, subType,
+		)
 	} else {
 		confirmMsg = fmt.Sprintf(
 			"✅ Subscription granted!\n\n"+
@@ -404,7 +440,8 @@ func HandleAdminSetPrice(c tele.Context, repo *db.Repository) error {
 				"• ten_steals\n"+
 				"• week\n"+
 				"• month\n"+
-				"• year\n\n"+
+				"• year\n"+
+				"• infinity\n\n"+
 				"Example: /setprice month 200",
 		)
 	}

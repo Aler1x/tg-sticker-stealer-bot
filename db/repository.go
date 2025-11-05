@@ -53,6 +53,7 @@ func (r *Repository) initializeDefaultPrices() error {
 		{SubscriptionType: SubscriptionWeek, PriceStars: 50, Description: "1 week unlimited", Value: 7},
 		{SubscriptionType: SubscriptionMonth, PriceStars: 150, Description: "1 month unlimited", Value: 30},
 		{SubscriptionType: SubscriptionYear, PriceStars: 1200, Description: "1 year unlimited", Value: 365},
+		{SubscriptionType: SubscriptionInfinity, PriceStars: 5000, Description: "Lifetime unlimited", Value: 0},
 	}
 
 	for _, price := range defaultPrices {

@@ -55,6 +55,7 @@ const (
 	SubscriptionWeek       SubscriptionType = "week"
 	SubscriptionMonth      SubscriptionType = "month"
 	SubscriptionYear       SubscriptionType = "year"
+	SubscriptionInfinity   SubscriptionType = "infinity"
 )
 
 // SubscriptionPrice stores pricing configuration for subscription types
