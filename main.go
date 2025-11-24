@@ -39,11 +39,11 @@ func main() {
 		utils.Fatal("Failed to create temp directory", map[string]any{"error": err.Error()})
 	}
 
-	repo, err := db.NewRepository("./data/packs.db")
+	database, err := db.New("./data/packs.db")
 	if err != nil {
 		utils.Fatal("Failed to initialize database", map[string]any{"error": err.Error()})
 	}
-	defer repo.Close()
+	defer database.Close()
 
 	// Configure poller based on environment
 	var poller tg.Poller
@@ -103,7 +103,7 @@ func main() {
 					LastName:     ctx.Sender().LastName,
 					LanguageCode: ctx.Sender().LanguageCode,
 				}
-				if err := repo.UpsertUser(user); err != nil {
+				if err := database.Users.Upsert(user); err != nil {
 					utils.Logger("error", "Failed to track user", map[string]any{
 						"userId": ctx.Sender().ID,
 						"error":  err.Error(),
@@ -148,7 +148,7 @@ func main() {
 	})
 
 	bot.Handle("/list", func(ctx tg.Context) error {
-		return handlers.HandleListPacks(ctx, repo)
+		return handlers.HandleListPacks(ctx, database.Packs)
 	})
 
 	bot.Handle("/delete", func(ctx tg.Context) error {
@@ -163,7 +163,7 @@ func main() {
 			return ctx.Send(utils.T(lang, "delete-usage"))
 		}
 
-		return handlers.HandleDeletePack(ctx, packID, repo)
+		return handlers.HandleDeletePack(ctx, packID, database.Packs)
 	})
 
 	bot.Handle("/cancel", func(ctx tg.Context) error {
@@ -180,7 +180,7 @@ func main() {
 	})
 
 	bot.Handle("/stats", func(ctx tg.Context) error {
-		return handlers.HandleAdminStats(ctx, repo)
+		return handlers.HandleAdminStats(ctx, database)
 	})
 
 	bot.Handle(tg.OnText, func(ctx tg.Context) error {
@@ -192,7 +192,7 @@ func main() {
 
 		switch session.State {
 		case services.StateWaitingForPackName:
-			return handlers.HandlePackNameInput(ctx, text, bot, sessions, repo)
+			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Packs)
 
 		default:
 			if utils.IsStickerPack(text) {

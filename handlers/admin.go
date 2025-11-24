@@ -48,18 +48,18 @@ func IsAdmin(userID int64) bool {
 	return slices.Contains(adminIDs, userID)
 }
 
-func HandleAdminStats(ctx tg.Context, repo *db.Repository) error {
+func HandleAdminStats(ctx tg.Context, database *db.DB) error {
 	if !IsAdmin(ctx.Sender().ID) {
 		return nil
 	}
 
-	packCount, err := repo.GetPackCount()
+	packCount, err := database.Packs.Count()
 	if err != nil {
 		utils.Logger("error", "Failed to get pack count", map[string]any{"error": err.Error()})
 		return ctx.Send("❌ Failed to fetch statistics.")
 	}
 
-	userCount, err := repo.GetUserCount()
+	userCount, err := database.Users.Count()
 	if err != nil {
 		utils.Logger("error", "Failed to get user count", map[string]any{"error": err.Error()})
 		return ctx.Send("❌ Failed to fetch statistics.")

@@ -61,7 +61,7 @@ func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot
 	return nil
 }
 
-func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, repo *db.Repository) error {
+func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, packs *db.PackRepository) error {
 	lang := ctx.Message().Sender.LanguageCode
 	userID := ctx.Sender().ID
 
@@ -99,7 +99,7 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 		}
 	}
 
-	packLink, err := services.CreateStickerSet(bot, userID, bot.Me.Username, userInput, session.OriginalItems, session.PackType, repo, progressCallback)
+	packLink, err := services.CreateStickerSet(bot, userID, bot.Me.Username, userInput, session.OriginalItems, session.PackType, packs, progressCallback)
 	if err != nil {
 		if progressMsg != nil {
 			ctx.Bot().Delete(progressMsg)
@@ -126,11 +126,11 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 	return nil
 }
 
-func HandleListPacks(ctx tg.Context, repo *db.Repository) error {
+func HandleListPacks(ctx tg.Context, packs *db.PackRepository) error {
 	lang := ctx.Message().Sender.LanguageCode
 	userID := ctx.Sender().ID
 
-	packs, err := repo.GetPacksByUserID(userID)
+	packList, err := packs.GetByUserID(userID)
 	if err != nil {
 		utils.Logger("error", "Error getting packs for user", map[string]any{
 			"userId": userID,
@@ -139,27 +139,27 @@ func HandleListPacks(ctx tg.Context, repo *db.Repository) error {
 		return ctx.Send(utils.T(lang, "error"))
 	}
 
-	if len(packs) == 0 {
+	if len(packList) == 0 {
 		return ctx.Send(utils.T(lang, "list-empty"))
 	}
 
-	sort.Slice(packs, func(i, j int) bool {
-		return packs[i].ID < packs[j].ID
+	sort.Slice(packList, func(i, j int) bool {
+		return packList[i].ID < packList[j].ID
 	})
 
 	message := utils.T(lang, "list-header")
-	for _, pack := range packs {
+	for _, pack := range packList {
 		message += utils.T(lang, "list-item", pack.ID, pack.PackTitle, pack.PackType, pack.StickerCount, pack.PackLink)
 	}
 
 	return ctx.Send(message)
 }
 
-func HandleDeletePack(ctx tg.Context, packID int64, repo *db.Repository) error {
+func HandleDeletePack(ctx tg.Context, packID int64, packs *db.PackRepository) error {
 	lang := ctx.Message().Sender.LanguageCode
 	userID := ctx.Sender().ID
 
-	err := repo.DeletePack(packID, userID)
+	err := packs.Delete(packID, userID)
 	if err != nil {
 		utils.Logger("error", "Error deleting pack", map[string]any{
 			"packId": packID,
