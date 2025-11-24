@@ -21,6 +21,9 @@ func GetCommands(lang string) []tg.Command {
 	return []tg.Command{
 		{Text: "/start", Description: utils.T(lang, "start-command")},
 		{Text: "/help", Description: utils.T(lang, "help-command")},
+		{Text: "/copy", Description: utils.T(lang, "copy-command")},
+		{Text: "/download", Description: utils.T(lang, "download-command")},
+		{Text: "/settings", Description: utils.T(lang, "settings-command")},
 		{Text: "/list", Description: utils.T(lang, "list-command")},
 		{Text: "/delete", Description: utils.T(lang, "delete-command")},
 		{Text: "/cancel", Description: utils.T(lang, "cancel-command")},
@@ -147,6 +150,68 @@ func main() {
 		return ctx.Send(utils.T(lang, "help"))
 	})
 
+	bot.Handle("/copy", func(ctx tg.Context) error {
+		lang := ctx.Message().Sender.LanguageCode
+		args := strings.Fields(ctx.Text())
+		if len(args) < 2 {
+			return ctx.Send(utils.T(lang, "copy-usage"))
+		}
+
+		link := args[1]
+		if utils.IsStickerPack(link) {
+			packName := utils.ExtractStickerPackName(link)
+			if packName == "" {
+				return ctx.Send(utils.T(lang, "invalid-link"))
+			}
+			return handlers.HandleCopyPack(ctx, packName, types.StickerTypeRegular, bot, sessions)
+		}
+
+		if utils.IsEmojiPack(link) {
+			packName := utils.ExtractEmojiPackName(link)
+			if packName == "" {
+				return ctx.Send(utils.T(lang, "invalid-link"))
+			}
+			return handlers.HandleCopyPack(ctx, packName, types.StickerTypeEmoji, bot, sessions)
+		}
+
+		return ctx.Send(utils.T(lang, "invalid-link"))
+	})
+
+	bot.Handle("/download", func(ctx tg.Context) error {
+		lang := ctx.Message().Sender.LanguageCode
+		args := strings.Fields(ctx.Text())
+		if len(args) < 2 {
+			return ctx.Send(utils.T(lang, "download-usage"))
+		}
+
+		link := args[1]
+		if utils.IsStickerPack(link) {
+			packName := utils.ExtractStickerPackName(link)
+			if packName == "" {
+				return ctx.Send(utils.T(lang, "invalid-link"))
+			}
+			return handlers.HandleDownloadPack(ctx, packName, types.StickerTypeRegular, bot)
+		}
+
+		if utils.IsEmojiPack(link) {
+			packName := utils.ExtractEmojiPackName(link)
+			if packName == "" {
+				return ctx.Send(utils.T(lang, "invalid-link"))
+			}
+			return handlers.HandleDownloadPack(ctx, packName, types.StickerTypeEmoji, bot)
+		}
+
+		return ctx.Send(utils.T(lang, "invalid-link"))
+	})
+
+	bot.Handle("/settings", func(ctx tg.Context) error {
+		return handlers.HandleSettings(ctx, database.Users)
+	})
+
+	bot.Handle(&tg.InlineButton{Unique: "set_action"}, func(ctx tg.Context) error {
+		return handlers.HandleSettingsCallback(ctx, database.Users)
+	})
+
 	bot.Handle("/list", func(ctx tg.Context) error {
 		return handlers.HandleListPacks(ctx, database.Packs)
 	})
@@ -195,24 +260,40 @@ func main() {
 			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Packs)
 
 		default:
+			var packName string
+			var packType types.StickerType
+
 			if utils.IsStickerPack(text) {
-				packName := utils.ExtractStickerPackName(text)
-				if packName == "" {
-					return ctx.Send(utils.T(lang, "invalid-link"))
-				}
-				return handlers.HandlePack(ctx, packName, types.StickerTypeRegular, bot, sessions)
+				packName = utils.ExtractStickerPackName(text)
+				packType = types.StickerTypeRegular
+			} else if utils.IsEmojiPack(text) {
+				packName = utils.ExtractEmojiPackName(text)
+				packType = types.StickerTypeEmoji
 			}
 
-			if utils.IsEmojiPack(text) {
-				packName := utils.ExtractEmojiPackName(text)
-				if packName == "" {
-					return ctx.Send(utils.T(lang, "invalid-link"))
-				}
-				return handlers.HandlePack(ctx, packName, types.StickerTypeEmoji, bot, sessions)
+			if packName == "" {
+				return ctx.Send(utils.T(lang, "invalid-link"))
 			}
 
-			return ctx.Send(utils.T(lang, "invalid-link"))
+			user, err := database.Users.GetByID(userID)
+			if err != nil || user == nil {
+				return handlers.HandleCopyPack(ctx, packName, packType, bot, sessions)
+			}
+
+			if user.DefaultAction == db.DefaultActionDownload {
+				return handlers.HandleDownloadPack(ctx, packName, packType, bot)
+			}
+
+			return handlers.HandleCopyPack(ctx, packName, packType, bot, sessions)
 		}
+	})
+
+	bot.Handle(tg.OnPhoto, func(ctx tg.Context) error {
+		return handlers.HandleImageToSticker(ctx, bot)
+	})
+
+	bot.Handle(tg.OnSticker, func(ctx tg.Context) error {
+		return handlers.HandleStickerToImage(ctx, bot)
 	})
 
 	go func() {

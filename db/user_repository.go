@@ -57,3 +57,22 @@ func (r *UserRepository) Count() (int, error) {
 	}
 	return int(count), nil
 }
+
+func (r *UserRepository) GetByID(userID int64) (*User, error) {
+	var user User
+	err := r.db.Where("user_id = ?", userID).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) SetDefaultAction(userID int64, action DefaultAction) error {
+	if err := r.db.Model(&User{}).Where("user_id = ?", userID).Update("default_action", action).Error; err != nil {
+		return fmt.Errorf("failed to update default action: %w", err)
+	}
+	return nil
+}

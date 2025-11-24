@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"tg-sticker-stiller-bot/db"
 	"tg-sticker-stiller-bot/services"
@@ -11,36 +12,41 @@ import (
 	tg "gopkg.in/telebot.v4"
 )
 
-func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot, sessions *services.SessionStore) error {
-	lang := ctx.Message().Sender.LanguageCode
-	userID := ctx.Sender().ID
-
-	var stickerSet *types.StickerSet
-	var err error
-
+func fetchStickerSet(bot *tg.Bot, packName string, packType types.StickerType, lang string) (*types.StickerSet, error) {
 	if packType == types.StickerTypeEmoji {
-		emojiSet, fetchErr := services.FetchEmojiSet(bot, packName)
-		if fetchErr != nil {
-			utils.Logger("error", "Error fetching emoji pack", map[string]any{
-				"packName": packName,
-				"error":    fetchErr.Error(),
-			})
-			return ctx.Send(utils.T(lang, "error"))
-		}
-		stickerSet = &types.StickerSet{
-			Name:     emojiSet.Name,
-			Title:    emojiSet.Title,
-			Stickers: emojiSet.Stickers,
-		}
-	} else {
-		stickerSet, err = services.FetchStickerSet(bot, packName)
+		emojiSet, err := services.FetchEmojiSet(bot, packName)
 		if err != nil {
-			utils.Logger("error", "Error fetching sticker pack", map[string]any{
+			utils.Logger("error", "Error fetching emoji pack", map[string]any{
 				"packName": packName,
 				"error":    err.Error(),
 			})
-			return ctx.Send(utils.T(lang, "error"))
+			return nil, err
 		}
+		return &types.StickerSet{
+			Name:     emojiSet.Name,
+			Title:    emojiSet.Title,
+			Stickers: emojiSet.Stickers,
+		}, nil
+	}
+
+	stickerSet, err := services.FetchStickerSet(bot, packName)
+	if err != nil {
+		utils.Logger("error", "Error fetching sticker pack", map[string]any{
+			"packName": packName,
+			"error":    err.Error(),
+		})
+		return nil, err
+	}
+	return stickerSet, nil
+}
+
+func HandleCopyPack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot, sessions *services.SessionStore) error {
+	lang := ctx.Message().Sender.LanguageCode
+	userID := ctx.Sender().ID
+
+	stickerSet, err := fetchStickerSet(bot, packName, packType, lang)
+	if err != nil {
+		return ctx.Send(utils.T(lang, "error"))
 	}
 
 	packTypeKey := "pack-type"
@@ -52,6 +58,7 @@ func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot
 
 	sessions.Set(userID, &services.Session{
 		State:         services.StateWaitingForPackName,
+		Action:        services.ActionCopy,
 		Title:         stickerSet.Title,
 		OriginalItems: stickerSet.Stickers,
 		Name:          packName,
@@ -59,6 +66,53 @@ func HandlePack(ctx tg.Context, packName string, packType types.StickerType, bot
 	})
 
 	return nil
+}
+
+func HandleDownloadPack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot) error {
+	lang := ctx.Message().Sender.LanguageCode
+
+	stickerSet, err := fetchStickerSet(bot, packName, packType, lang)
+	if err != nil {
+		return ctx.Send(utils.T(lang, "error"))
+	}
+
+	packTypeKey := "pack-type"
+	if packType == types.StickerTypeEmoji {
+		packTypeKey = "emoji-type"
+	}
+
+	progressMsg, err := bot.Send(ctx.Recipient(), utils.T(lang, "downloading-pack", utils.T(lang, packTypeKey), len(stickerSet.Stickers)))
+	if err != nil {
+		utils.Logger("warn", "Failed to send progress message", map[string]any{"error": err.Error()})
+	}
+
+	progressCallback := func(current, total int) {
+		if progressMsg != nil {
+			newText := fmt.Sprintf("📥 Downloading: %d/%d items...", current, total)
+			bot.Edit(progressMsg, newText)
+		}
+	}
+
+	zipPath, err := services.CreateStickerZip(bot, stickerSet.Stickers, stickerSet.Name, progressCallback)
+	if err != nil {
+		if progressMsg != nil {
+			bot.Delete(progressMsg)
+		}
+		utils.Logger("error", "Failed to create zip", map[string]any{"error": err.Error()})
+		return ctx.Send(utils.T(lang, "error"))
+	}
+	defer os.Remove(zipPath)
+
+	if progressMsg != nil {
+		bot.Delete(progressMsg)
+	}
+
+	doc := &tg.Document{
+		File:     tg.FromDisk(zipPath),
+		FileName: fmt.Sprintf("%s.zip", stickerSet.Name),
+	}
+
+	return ctx.Send(doc)
 }
 
 func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, packs *db.PackRepository) error {
