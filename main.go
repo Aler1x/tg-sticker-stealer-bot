@@ -24,6 +24,7 @@ func GetCommands(lang string) []tg.Command {
 		{Text: "/copy", Description: utils.T(lang, "copy-command")},
 		{Text: "/download", Description: utils.T(lang, "download-command")},
 		{Text: "/settings", Description: utils.T(lang, "settings-command")},
+		{Text: "/language", Description: utils.T(lang, "language-command")},
 		{Text: "/list", Description: utils.T(lang, "list-command")},
 		{Text: "/delete", Description: utils.T(lang, "delete-command")},
 		{Text: "/cancel", Description: utils.T(lang, "cancel-command")},
@@ -42,7 +43,12 @@ func main() {
 		utils.Fatal("Failed to create temp directory", map[string]any{"error": err.Error()})
 	}
 
-	database, err := db.New("./data/packs.db")
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		utils.Fatal("DATABASE_URL environment variable is not set")
+	}
+
+	database, err := db.New(databaseURL)
 	if err != nil {
 		utils.Fatal("Failed to initialize database", map[string]any{"error": err.Error()})
 	}
@@ -118,9 +124,10 @@ func main() {
 	}))
 
 	bot.Handle("/start", func(ctx tg.Context) error {
-		lang := ctx.Message().Sender.LanguageCode
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 		username := ctx.Message().Sender.Username
-		sessions.Clear(ctx.Sender().ID)
+		sessions.Clear(userID)
 		return ctx.Send(utils.T(lang, "welcome", username))
 	})
 
@@ -146,12 +153,14 @@ func main() {
 	})
 
 	bot.Handle("/help", func(ctx tg.Context) error {
-		lang := ctx.Message().Sender.LanguageCode
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 		return ctx.Send(utils.T(lang, "help"))
 	})
 
 	bot.Handle("/copy", func(ctx tg.Context) error {
-		lang := ctx.Message().Sender.LanguageCode
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 		args := strings.Fields(ctx.Text())
 		if len(args) < 2 {
 			return ctx.Send(utils.T(lang, "copy-usage"))
@@ -163,7 +172,7 @@ func main() {
 			if packName == "" {
 				return ctx.Send(utils.T(lang, "invalid-link"))
 			}
-			return handlers.HandleCopyPack(ctx, packName, types.StickerTypeRegular, bot, sessions)
+			return handlers.HandleCopyPack(ctx, packName, types.StickerTypeRegular, bot, sessions, database.Users)
 		}
 
 		if utils.IsEmojiPack(link) {
@@ -171,14 +180,15 @@ func main() {
 			if packName == "" {
 				return ctx.Send(utils.T(lang, "invalid-link"))
 			}
-			return handlers.HandleCopyPack(ctx, packName, types.StickerTypeEmoji, bot, sessions)
+			return handlers.HandleCopyPack(ctx, packName, types.StickerTypeEmoji, bot, sessions, database.Users)
 		}
 
 		return ctx.Send(utils.T(lang, "invalid-link"))
 	})
 
 	bot.Handle("/download", func(ctx tg.Context) error {
-		lang := ctx.Message().Sender.LanguageCode
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 		args := strings.Fields(ctx.Text())
 		if len(args) < 2 {
 			return ctx.Send(utils.T(lang, "download-usage"))
@@ -190,7 +200,7 @@ func main() {
 			if packName == "" {
 				return ctx.Send(utils.T(lang, "invalid-link"))
 			}
-			return handlers.HandleDownloadPack(ctx, packName, types.StickerTypeRegular, bot)
+			return handlers.HandleDownloadPack(ctx, packName, types.StickerTypeRegular, bot, database.Users)
 		}
 
 		if utils.IsEmojiPack(link) {
@@ -198,7 +208,7 @@ func main() {
 			if packName == "" {
 				return ctx.Send(utils.T(lang, "invalid-link"))
 			}
-			return handlers.HandleDownloadPack(ctx, packName, types.StickerTypeEmoji, bot)
+			return handlers.HandleDownloadPack(ctx, packName, types.StickerTypeEmoji, bot, database.Users)
 		}
 
 		return ctx.Send(utils.T(lang, "invalid-link"))
@@ -212,12 +222,21 @@ func main() {
 		return handlers.HandleSettingsCallback(ctx, database.Users)
 	})
 
+	bot.Handle("/language", func(ctx tg.Context) error {
+		return handlers.HandleLanguage(ctx, database.Users)
+	})
+
+	bot.Handle(&tg.InlineButton{Unique: "set_language"}, func(ctx tg.Context) error {
+		return handlers.HandleLanguageCallback(ctx, database.Users)
+	})
+
 	bot.Handle("/list", func(ctx tg.Context) error {
-		return handlers.HandleListPacks(ctx, database.Packs)
+		return handlers.HandleListPacks(ctx, database.Packs, database.Users)
 	})
 
 	bot.Handle("/delete", func(ctx tg.Context) error {
-		lang := ctx.Message().Sender.LanguageCode
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 		args := strings.Fields(ctx.Text())
 		if len(args) < 2 {
 			return ctx.Send(utils.T(lang, "delete-usage"))
@@ -228,12 +247,12 @@ func main() {
 			return ctx.Send(utils.T(lang, "delete-usage"))
 		}
 
-		return handlers.HandleDeletePack(ctx, packID, database.Packs)
+		return handlers.HandleDeletePack(ctx, packID, database.Packs, database.Users)
 	})
 
 	bot.Handle("/cancel", func(ctx tg.Context) error {
-		lang := ctx.Message().Sender.LanguageCode
 		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 		session := sessions.Get(userID)
 
 		if session.State == services.StateIdle {
@@ -251,13 +270,13 @@ func main() {
 	bot.Handle(tg.OnText, func(ctx tg.Context) error {
 		text := ctx.Text()
 		userID := ctx.Sender().ID
-		lang := ctx.Message().Sender.LanguageCode
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 
 		session := sessions.Get(userID)
 
 		switch session.State {
 		case services.StateWaitingForPackName:
-			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Packs)
+			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Packs, database.Users)
 
 		default:
 			var packName string
@@ -277,23 +296,23 @@ func main() {
 
 			user, err := database.Users.GetByID(userID)
 			if err != nil || user == nil {
-				return handlers.HandleCopyPack(ctx, packName, packType, bot, sessions)
+				return handlers.HandleCopyPack(ctx, packName, packType, bot, sessions, database.Users)
 			}
 
 			if user.DefaultAction == db.DefaultActionDownload {
-				return handlers.HandleDownloadPack(ctx, packName, packType, bot)
+				return handlers.HandleDownloadPack(ctx, packName, packType, bot, database.Users)
 			}
 
-			return handlers.HandleCopyPack(ctx, packName, packType, bot, sessions)
+			return handlers.HandleCopyPack(ctx, packName, packType, bot, sessions, database.Users)
 		}
 	})
 
 	bot.Handle(tg.OnPhoto, func(ctx tg.Context) error {
-		return handlers.HandleImageToSticker(ctx, bot)
+		return handlers.HandleImageToSticker(ctx, bot, database.Users)
 	})
 
 	bot.Handle(tg.OnSticker, func(ctx tg.Context) error {
-		return handlers.HandleStickerToImage(ctx, bot)
+		return handlers.HandleStickerToImage(ctx, bot, database.Users)
 	})
 
 	go func() {

@@ -30,13 +30,21 @@ func (r *UserRepository) Upsert(user *User) error {
 		return fmt.Errorf("failed to check user: %w", result.Error)
 	}
 
-	if err := r.db.Model(&User{}).Where("user_id = ?", user.UserID).Updates(map[string]any{
-		"username":      user.Username,
-		"first_name":    user.FirstName,
-		"last_name":     user.LastName,
-		"language_code": user.LanguageCode,
-		"last_seen_at":  now,
-	}).Error; err != nil {
+	updates := map[string]any{
+		"username":     user.Username,
+		"first_name":   user.FirstName,
+		"last_name":    user.LastName,
+		"last_seen_at": now,
+	}
+
+	var existingUser User
+	if err := r.db.Where("user_id = ?", user.UserID).First(&existingUser).Error; err == nil {
+		if existingUser.LanguageCode == "" {
+			updates["language_code"] = user.LanguageCode
+		}
+	}
+
+	if err := r.db.Model(&User{}).Where("user_id = ?", user.UserID).Updates(updates).Error; err != nil {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 	return nil
@@ -73,6 +81,13 @@ func (r *UserRepository) GetByID(userID int64) (*User, error) {
 func (r *UserRepository) SetDefaultAction(userID int64, action DefaultAction) error {
 	if err := r.db.Model(&User{}).Where("user_id = ?", userID).Update("default_action", action).Error; err != nil {
 		return fmt.Errorf("failed to update default action: %w", err)
+	}
+	return nil
+}
+
+func (r *UserRepository) SetLanguage(userID int64, languageCode string) error {
+	if err := r.db.Model(&User{}).Where("user_id = ?", userID).Update("language_code", languageCode).Error; err != nil {
+		return fmt.Errorf("failed to update language: %w", err)
 	}
 	return nil
 }

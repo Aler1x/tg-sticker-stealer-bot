@@ -40,9 +40,9 @@ func fetchStickerSet(bot *tg.Bot, packName string, packType types.StickerType, l
 	return stickerSet, nil
 }
 
-func HandleCopyPack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot, sessions *services.SessionStore) error {
-	lang := ctx.Message().Sender.LanguageCode
+func HandleCopyPack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot, sessions *services.SessionStore, users *db.UserRepository) error {
 	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
 	stickerSet, err := fetchStickerSet(bot, packName, packType, lang)
 	if err != nil {
@@ -68,8 +68,9 @@ func HandleCopyPack(ctx tg.Context, packName string, packType types.StickerType,
 	return nil
 }
 
-func HandleDownloadPack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot) error {
-	lang := ctx.Message().Sender.LanguageCode
+func HandleDownloadPack(ctx tg.Context, packName string, packType types.StickerType, bot *tg.Bot, users *db.UserRepository) error {
+	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
 	stickerSet, err := fetchStickerSet(bot, packName, packType, lang)
 	if err != nil {
@@ -115,9 +116,9 @@ func HandleDownloadPack(ctx tg.Context, packName string, packType types.StickerT
 	return ctx.Send(doc)
 }
 
-func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, packs *db.PackRepository) error {
-	lang := ctx.Message().Sender.LanguageCode
+func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, packs *db.PackRepository, users *db.UserRepository) error {
 	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
 	session := sessions.Get(userID)
 
@@ -180,9 +181,9 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 	return nil
 }
 
-func HandleListPacks(ctx tg.Context, packs *db.PackRepository) error {
-	lang := ctx.Message().Sender.LanguageCode
+func HandleListPacks(ctx tg.Context, packs *db.PackRepository, users *db.UserRepository) error {
 	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
 	packList, err := packs.GetByUserID(userID)
 	if err != nil {
@@ -209,9 +210,9 @@ func HandleListPacks(ctx tg.Context, packs *db.PackRepository) error {
 	return ctx.Send(message)
 }
 
-func HandleDeletePack(ctx tg.Context, packID int64, packs *db.PackRepository) error {
-	lang := ctx.Message().Sender.LanguageCode
+func HandleDeletePack(ctx tg.Context, packID int64, packs *db.PackRepository, users *db.UserRepository) error {
 	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
 	err := packs.Delete(packID, userID)
 	if err != nil {

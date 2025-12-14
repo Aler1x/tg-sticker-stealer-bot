@@ -2,14 +2,16 @@ package handlers
 
 import (
 	"os"
+	"tg-sticker-stiller-bot/db"
 	"tg-sticker-stiller-bot/services"
 	"tg-sticker-stiller-bot/utils"
 
 	tg "gopkg.in/telebot.v4"
 )
 
-func HandleImageToSticker(ctx tg.Context, bot *tg.Bot) error {
-	lang := ctx.Message().Sender.LanguageCode
+func HandleImageToSticker(ctx tg.Context, bot *tg.Bot, users *db.UserRepository) error {
+	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 	photo := ctx.Message().Photo
 
 	if photo == nil {
@@ -33,8 +35,9 @@ func HandleImageToSticker(ctx tg.Context, bot *tg.Bot) error {
 	return ctx.Send(sticker)
 }
 
-func HandleStickerToImage(ctx tg.Context, bot *tg.Bot) error {
-	lang := ctx.Message().Sender.LanguageCode
+func HandleStickerToImage(ctx tg.Context, bot *tg.Bot, users *db.UserRepository) error {
+	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 	sticker := ctx.Message().Sticker
 
 	if sticker == nil {

@@ -8,8 +8,8 @@ import (
 )
 
 func HandleSettings(ctx tg.Context, users *db.UserRepository) error {
-	lang := ctx.Message().Sender.LanguageCode
 	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
 	user, err := users.GetByID(userID)
 	if err != nil || user == nil {
@@ -33,8 +33,8 @@ func HandleSettings(ctx tg.Context, users *db.UserRepository) error {
 }
 
 func HandleSettingsCallback(ctx tg.Context, users *db.UserRepository) error {
-	lang := ctx.Sender().LanguageCode
 	userID := ctx.Sender().ID
+	lang := utils.GetUserLanguage(users, userID, ctx.Sender().LanguageCode)
 	action := ctx.Data()
 
 	var dbAction db.DefaultAction

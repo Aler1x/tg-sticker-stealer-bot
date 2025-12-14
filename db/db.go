@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -14,8 +14,8 @@ type DB struct {
 	Users *UserRepository
 }
 
-func New(dbPath string) (*DB, error) {
-	conn, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+func New(dsn string) (*DB, error) {
+	conn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {

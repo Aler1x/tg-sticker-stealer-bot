@@ -2,8 +2,8 @@ package i18n
 
 var En = map[string]string{
 	"hello":   "Hello",
-	"welcome": "Welcome to Sticker & Emoji Stiller @%s!\n\nCommands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/list - your created packs\n/delete <id> - delete a pack\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
-	"help":    "Commands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/list - your created packs\n/delete <id> - delete a pack\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
+	"welcome": "Welcome to Sticker & Emoji Stiller @%s!\n\nCommands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n/list - your created packs\n/delete <id> - delete a pack\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
+	"help":    "Commands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n/list - your created packs\n/delete <id> - delete a pack\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
 
 	"start-command":    "Start (or restart) bot",
 	"help-command":     "Show help message",
@@ -51,4 +51,13 @@ var En = map[string]string{
 
 	"copy-usage":     "Usage: /copy <pack_link>\n\nExample: /copy https://t.me/addstickers/PackName",
 	"download-usage": "Usage: /download <pack_link>\n\nExample: /download https://t.me/addstickers/PackName",
+
+	"language-command": "Change interface language",
+	"language-prompt":  "Current language: %s\n\nSelect your preferred language:",
+	"language-saved":   "Language saved!",
+	"language-updated": "✅ Language changed to: %s",
+	"btn-lang-en":      "🇬🇧 English",
+	"btn-lang-ua":      "🇺🇦 Українська",
+	"lang-name-en":     "English",
+	"lang-name-ua":     "Ukrainian",
 }
