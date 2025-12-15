@@ -115,7 +115,7 @@ func HandleDownloadPack(ctx tg.Context, packName string, packType types.StickerT
 	return ctx.Send(doc)
 }
 
-func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, packs *db.PackRepository, users *db.UserRepository) error {
+func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, users *db.UserRepository) error {
 	userID := ctx.Sender().ID
 	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
@@ -153,7 +153,7 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 		}
 	}
 
-	packLink, err := services.CreateStickerSet(bot, userID, bot.Me.Username, userInput, session.OriginalItems, session.PackType, packs, progressCallback)
+	packLink, err := services.CreateStickerSet(bot, userID, bot.Me.Username, userInput, session.OriginalItems, session.PackType, progressCallback)
 	if err != nil {
 		if progressMsg != nil {
 			ctx.Bot().Delete(progressMsg)
@@ -180,135 +180,4 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 	return nil
 }
 
-func HandleListPacks(ctx tg.Context, page int, packs *db.PackRepository, users *db.UserRepository) error {
-	userID := ctx.Sender().ID
-	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
-	const pageSize = 5
-
-	packList, total, err := packs.GetPaginated(userID, page, pageSize)
-	if err != nil {
-		utils.Logger("error", "Error getting packs for user", map[string]any{
-			"userId": userID,
-			"error":  err.Error(),
-		})
-		return ctx.Send(utils.T(lang, "error"))
-	}
-
-	if len(packList) == 0 {
-		if page == 1 {
-			return ctx.Send(utils.T(lang, "list-empty"))
-		}
-		return ctx.Send(utils.T(lang, "list-page-empty"))
-	}
-
-	totalPages := (total + pageSize - 1) / pageSize
-	message := utils.T(lang, "list-header-paginated", page, totalPages, total)
-
-	startIndex := (page - 1) * pageSize
-	for i, pack := range packList {
-		orderNum := startIndex + i + 1
-		message += utils.T(lang, "list-item", orderNum, pack.PackTitle, pack.PackType, pack.StickerCount, pack.PackLink)
-	}
-
-	if totalPages > 1 {
-		keyboard := buildPaginationKeyboard(page, totalPages)
-		return ctx.Send(message, keyboard)
-	}
-
-	return ctx.Send(message)
-}
-
-func buildPaginationKeyboard(currentPage, totalPages int) *tg.ReplyMarkup {
-	markup := &tg.ReplyMarkup{}
-	var buttons []tg.Btn
-
-	if currentPage > 1 {
-		buttons = append(buttons, markup.Data("◀️ Previous", "list_page", fmt.Sprintf("%d", currentPage-1)))
-	}
-
-	buttons = append(buttons, markup.Data(fmt.Sprintf("%d / %d", currentPage, totalPages), "list_noop", ""))
-
-	if currentPage < totalPages {
-		buttons = append(buttons, markup.Data("Next ▶️", "list_page", fmt.Sprintf("%d", currentPage+1)))
-	}
-
-	markup.Inline(markup.Row(buttons...))
-	return markup
-}
-
-func HandleListCallback(ctx tg.Context, packs *db.PackRepository, users *db.UserRepository) error {
-	data := ctx.Callback().Data
-	page := 1
-
-	if parsedPage, err := fmt.Sscanf(data, "%d", &page); err != nil || parsedPage != 1 || page < 1 {
-		page = 1
-	}
-
-	userID := ctx.Sender().ID
-	lang := utils.GetUserLanguage(users, userID, ctx.Callback().Sender.LanguageCode)
-
-	const pageSize = 5
-
-	packList, total, err := packs.GetPaginated(userID, page, pageSize)
-	if err != nil {
-		utils.Logger("error", "Error getting packs for user", map[string]any{
-			"userId": userID,
-			"error":  err.Error(),
-		})
-		return ctx.Respond(&tg.CallbackResponse{Text: utils.T(lang, "error")})
-	}
-
-	if len(packList) == 0 {
-		return ctx.Respond(&tg.CallbackResponse{Text: utils.T(lang, "list-page-empty")})
-	}
-
-	totalPages := (total + pageSize - 1) / pageSize
-	message := utils.T(lang, "list-header-paginated", page, totalPages, total)
-
-	startIndex := (page - 1) * pageSize
-	for i, pack := range packList {
-		orderNum := startIndex + i + 1
-		message += utils.T(lang, "list-item", orderNum, pack.PackTitle, pack.PackType, pack.StickerCount, pack.PackLink)
-	}
-
-	if totalPages > 1 {
-		keyboard := buildPaginationKeyboard(page, totalPages)
-		ctx.Edit(message, keyboard)
-	} else {
-		ctx.Edit(message)
-	}
-
-	return ctx.Respond()
-}
-
-func HandleDeletePack(ctx tg.Context, relativeID int, packs *db.PackRepository, users *db.UserRepository) error {
-	userID := ctx.Sender().ID
-	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
-
-	pack, err := packs.GetByRelativeID(userID, relativeID)
-	if err != nil {
-		utils.Logger("error", "Error getting pack by relative ID", map[string]any{
-			"relativeID": relativeID,
-			"userId":     userID,
-			"error":      err.Error(),
-		})
-		return ctx.Send(utils.T(lang, "error"))
-	}
-
-	if pack == nil {
-		return ctx.Send(utils.T(lang, "delete-not-found"))
-	}
-
-	err = packs.Delete(pack.ID, userID)
-	if err != nil {
-		utils.Logger("error", "Error deleting pack", map[string]any{
-			"packId": pack.ID,
-			"userId": userID,
-			"error":  err.Error(),
-		})
-		return ctx.Send(utils.T(lang, "delete-not-found"))
-	}
-
-	return ctx.Send(utils.T(lang, "delete-success"))
-}

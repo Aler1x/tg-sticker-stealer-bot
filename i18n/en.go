@@ -2,13 +2,11 @@ package i18n
 
 var En = map[string]string{
 	"hello":   "Hello",
-	"welcome": "Welcome to Sticker & Emoji Stiller @%s!\n\nCommands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n/list [page] - your created packs\n/delete <id> - delete a pack\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
-	"help":    "Commands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n/list [page] - your created packs\n/delete <id> - delete a pack\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
+	"welcome": "Welcome to Sticker & Emoji Stiller @%s!\n\nCommands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
+	"help":    "Commands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
 
 	"start-command":    "Start (or restart) bot",
 	"help-command":     "Show help message",
-	"list-command":     "List your created packs",
-	"delete-command":   "Delete a pack by ID",
 	"copy-command":     "Copy a sticker/emoji pack",
 	"download-command": "Download pack as ZIP",
 	"settings-command": "Set default action for links",
@@ -31,14 +29,7 @@ var En = map[string]string{
 	"pack-type":    "sticker",
 	"emoji-type":   "emoji",
 
-	"list-empty":            "You haven't created any packs yet.",
-	"list-page-empty":       "This page is empty.",
-	"list-header-paginated": "📦 Your packs (Page %d of %d, Total: %d):\n\n",
-	"list-item":             "%d. %s (%s) - %d items\n    %s\n\n",
-	"delete-success":        "✅ Pack deleted successfully!",
-	"delete-not-found":      "Pack not found or you don't have permission to delete it.",
-	"delete-usage":          "Usage: /delete <id>\n\nExample: /delete 1\n\nUse /list to see your packs and their IDs.",
-	"cancel-command":   "Cancel current operation",
+	"cancel-command": "Cancel current operation",
 
 	"settings-prompt":  "Current default action: %s\n\nSelect default action when you send a pack link:",
 	"settings-saved":   "Settings saved!",

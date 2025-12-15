@@ -53,12 +53,6 @@ func HandleAdminStats(ctx tg.Context, database *db.DB) error {
 		return nil
 	}
 
-	packCount, err := database.Packs.Count()
-	if err != nil {
-		utils.Logger("error", "Failed to get pack count", map[string]any{"error": err.Error()})
-		return ctx.Send("❌ Failed to fetch statistics.")
-	}
-
 	userCount, err := database.Users.Count()
 	if err != nil {
 		utils.Logger("error", "Failed to get user count", map[string]any{"error": err.Error()})
@@ -67,10 +61,8 @@ func HandleAdminStats(ctx tg.Context, database *db.DB) error {
 
 	stats := fmt.Sprintf(
 		"*Bot Statistics*\n\n"+
-			"Active users: `%d`\n"+
-			"Total packs: `%d`",
+			"Active users: `%d`",
 		userCount,
-		packCount,
 	)
 
 	return ctx.Send(stats, &tg.SendOptions{ParseMode: tg.ModeMarkdown})

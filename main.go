@@ -25,8 +25,6 @@ func GetCommands(lang string) []tg.Command {
 		{Text: "/download", Description: utils.T(lang, "download-command")},
 		{Text: "/settings", Description: utils.T(lang, "settings-command")},
 		{Text: "/language", Description: utils.T(lang, "language-command")},
-		{Text: "/list", Description: utils.T(lang, "list-command")},
-		{Text: "/delete", Description: utils.T(lang, "delete-command")},
 		{Text: "/cancel", Description: utils.T(lang, "cancel-command")},
 	}
 }
@@ -230,42 +228,6 @@ func main() {
 		return handlers.HandleLanguageCallback(ctx, database.Users)
 	})
 
-	bot.Handle("/list", func(ctx tg.Context) error {
-		args := strings.Fields(ctx.Text())
-		page := 1
-
-		if len(args) >= 2 {
-			if parsedPage, err := strconv.Atoi(args[1]); err == nil && parsedPage > 0 {
-				page = parsedPage
-			}
-		}
-
-		return handlers.HandleListPacks(ctx, page, database.Packs, database.Users)
-	})
-
-	bot.Handle(&tg.InlineButton{Unique: "list_page"}, func(ctx tg.Context) error {
-		return handlers.HandleListCallback(ctx, database.Packs, database.Users)
-	})
-
-	bot.Handle(&tg.InlineButton{Unique: "list_noop"}, func(ctx tg.Context) error {
-		return ctx.Respond()
-	})
-
-	bot.Handle("/delete", func(ctx tg.Context) error {
-		userID := ctx.Sender().ID
-		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
-		args := strings.Fields(ctx.Text())
-		if len(args) < 2 {
-			return ctx.Send(utils.T(lang, "delete-usage"))
-		}
-
-		relativeID, err := strconv.Atoi(args[1])
-		if err != nil || relativeID < 1 {
-			return ctx.Send(utils.T(lang, "delete-usage"))
-		}
-
-		return handlers.HandleDeletePack(ctx, relativeID, database.Packs, database.Users)
-	})
 
 	bot.Handle("/cancel", func(ctx tg.Context) error {
 		userID := ctx.Sender().ID
@@ -293,7 +255,7 @@ func main() {
 
 		switch session.State {
 		case services.StateWaitingForPackName:
-			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Packs, database.Users)
+			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Users)
 
 		default:
 			var packName string

@@ -7,19 +7,21 @@ A Telegram bot written in Go that allows users to create copies of sticker packs
 ### Core Features
 - 📦 **Copy Sticker Packs**: Create your own copy of any public sticker pack
 - 😀 **Copy Emoji Packs**: Create your own copy of any public custom emoji pack
+- 📥 **Download Packs**: Download sticker/emoji packs as ZIP files
 - 📊 **Pack Statistics**: View pack details including title and item count before creating
-- 📋 **List Your Packs**: See all packs you've created with the bot
-- 🗑️ **Delete Packs**: Remove packs from your list (via `/delete` command)
-- 💾 **Persistent Storage**: All created packs are saved to a PostgreSQL database
-- 🌍 **Multi-language**: Supports English and Ukrainian
+- 🔄 **Image Conversion**: Convert images to stickers and stickers to images
+- ⚙️ **Settings**: Configure default action (copy/download) for pack links
+- 🌍 **Multi-language**: Supports English, Ukrainian, and Polish
 
 ## Commands
 
 ### Public Commands
 - `/start` - Start or restart the bot
 - `/help` - Show help message
-- `/list` - List all packs you've created
-- `/delete <pack_id>` - Delete a pack by its ID
+- `/copy <link>` - Copy a sticker/emoji pack
+- `/download <link>` - Download pack as ZIP
+- `/settings` - Set default action for links
+- `/language` - Change interface language
 - `/cancel` - Cancel current operation
 
 ### Admin Commands
