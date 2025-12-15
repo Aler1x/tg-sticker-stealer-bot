@@ -25,9 +25,10 @@ func HandleLanguage(ctx tg.Context, users *db.UserRepository) error {
 	keyboard := &tg.ReplyMarkup{}
 	btnEn := keyboard.Data(utils.T(currentLang, "btn-lang-en"), "set_language", "en")
 	btnUa := keyboard.Data(utils.T(currentLang, "btn-lang-ua"), "set_language", "ua")
+	btnPl := keyboard.Data(utils.T(currentLang, "btn-lang-pl"), "set_language", "pl")
 
 	keyboard.Inline(
-		keyboard.Row(btnEn, btnUa),
+		keyboard.Row(btnEn, btnUa, btnPl),
 	)
 
 	return ctx.Send(utils.T(currentLang, "language-prompt", langName), keyboard)
@@ -37,7 +38,7 @@ func HandleLanguageCallback(ctx tg.Context, users *db.UserRepository) error {
 	userID := ctx.Sender().ID
 	langCode := ctx.Data()
 
-	if langCode != "en" && langCode != "ua" {
+	if langCode != "en" && langCode != "ua" && langCode != "pl" {
 		return ctx.Respond(&tg.CallbackResponse{Text: utils.T("en", "error")})
 	}
 

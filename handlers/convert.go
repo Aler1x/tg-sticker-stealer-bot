@@ -20,6 +20,9 @@ func HandleImageToSticker(ctx tg.Context, bot *tg.Bot, users *db.UserRepository)
 
 	stickerPath, err := services.ConvertImageToSticker(bot, photo)
 	if err != nil {
+		if botErr, ok := err.(*utils.BotError); ok {
+			return ctx.Send(utils.T(lang, botErr.I18nKey))
+		}
 		utils.Logger("error", "Failed to convert image to sticker", map[string]any{
 			"userId": ctx.Sender().ID,
 			"error":  err.Error(),
@@ -50,6 +53,9 @@ func HandleStickerToImage(ctx tg.Context, bot *tg.Bot, users *db.UserRepository)
 
 	imagePath, err := services.ConvertStickerToImage(bot, sticker)
 	if err != nil {
+		if botErr, ok := err.(*utils.BotError); ok {
+			return ctx.Send(utils.T(lang, botErr.I18nKey))
+		}
 		utils.Logger("error", "Failed to convert sticker to image", map[string]any{
 			"userId": ctx.Sender().ID,
 			"error":  err.Error(),

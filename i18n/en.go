@@ -48,6 +48,7 @@ var En = map[string]string{
 	"no-image":               "Please send an image.",
 	"no-sticker":             "Please send a sticker.",
 	"animated-not-supported": "Animated/video stickers cannot be converted to image.",
+	"unsupported-format":     "Unsupported format. Please send a JPEG, PNG or WebP image.",
 
 	"copy-usage":     "Usage: /copy <pack_link>\n\nExample: /copy https://t.me/addstickers/PackName",
 	"download-usage": "Usage: /download <pack_link>\n\nExample: /download https://t.me/addstickers/PackName",
@@ -58,6 +59,8 @@ var En = map[string]string{
 	"language-updated": "✅ Language changed to: %s",
 	"btn-lang-en":      "🇬🇧 English",
 	"btn-lang-ua":      "🇺🇦 Українська",
+	"btn-lang-pl":      "🇵🇱 Polski",
 	"lang-name-en":     "English",
 	"lang-name-ua":     "Ukrainian",
+	"lang-name-pl":     "Polish",
 }

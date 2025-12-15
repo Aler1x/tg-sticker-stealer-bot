@@ -136,7 +136,7 @@ func main() {
 			return ctx.Send("You are not authorized to use this command")
 		}
 
-		langs := []string{"en", "ua"}
+		langs := []string{"en", "ua", "pl"}
 		for _, lang := range langs {
 			err := bot.SetCommands(
 				GetCommands(lang),
@@ -313,6 +313,24 @@ func main() {
 
 	bot.Handle(tg.OnSticker, func(ctx tg.Context) error {
 		return handlers.HandleStickerToImage(ctx, bot, database.Users)
+	})
+
+	bot.Handle(tg.OnVideo, func(ctx tg.Context) error {
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
+		return ctx.Send(utils.T(lang, "unsupported-format"))
+	})
+
+	bot.Handle(tg.OnDocument, func(ctx tg.Context) error {
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
+		return ctx.Send(utils.T(lang, "unsupported-format"))
+	})
+
+	bot.Handle(tg.OnAnimation, func(ctx tg.Context) error {
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
+		return ctx.Send(utils.T(lang, "unsupported-format"))
 	})
 
 	go func() {

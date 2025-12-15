@@ -48,6 +48,7 @@ var Ua = map[string]string{
 	"no-image":               "Будь ласка, надішліть зображення.",
 	"no-sticker":             "Будь ласка, надішліть стікер.",
 	"animated-not-supported": "Анімовані/відео стікери не можна конвертувати у зображення.",
+	"unsupported-format":     "Непідтримуваний формат зображення. Надішліть JPEG, PNG або WebP зображення.",
 
 	"copy-usage":     "Використання: /copy <посилання>\n\nПриклад: /copy https://t.me/addstickers/PackName",
 	"download-usage": "Використання: /download <посилання>\n\nПриклад: /download https://t.me/addstickers/PackName",
@@ -58,6 +59,8 @@ var Ua = map[string]string{
 	"language-updated": "✅ Мову змінено на: %s",
 	"btn-lang-en":      "🇬🇧 English",
 	"btn-lang-ua":      "🇺🇦 Українська",
+	"btn-lang-pl":      "🇵🇱 Polski",
 	"lang-name-en":     "English",
 	"lang-name-ua":     "Українська",
+	"lang-name-pl":     "Polski",
 }

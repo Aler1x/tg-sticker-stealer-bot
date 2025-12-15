@@ -3,6 +3,8 @@ package services
 import (
 	"fmt"
 	"image"
+	_ "image/gif"
+	_ "image/jpeg"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -14,7 +16,9 @@ import (
 	tg "gopkg.in/telebot.v4"
 )
 
-const maxStickerDimension = 512
+const (
+	maxStickerDimension = 512
+)
 
 func ConvertImageToSticker(bot *tg.Bot, photo *tg.Photo) (string, error) {
 	if photo == nil || photo.FileID == "" {
@@ -29,7 +33,7 @@ func ConvertImageToSticker(bot *tg.Bot, photo *tg.Photo) (string, error) {
 
 	srcImg, _, err := image.Decode(reader)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode image: %w", err)
+		return "", utils.NewBotError("failed to decode image", "unsupported-format", "UNSUPPORTED_FORMAT")
 	}
 
 	bounds := srcImg.Bounds()
@@ -53,7 +57,7 @@ func ConvertImageToSticker(bot *tg.Bot, photo *tg.Photo) (string, error) {
 	}
 
 	filename := fmt.Sprintf("%s.png", uuid.New().String())
-	filePath := filepath.Join(TempDir, filename)
+	filePath := filepath.Join(utils.TempDir, filename)
 
 	outFile, err := os.Create(filePath)
 	if err != nil {
@@ -93,7 +97,7 @@ func ConvertStickerToImage(bot *tg.Bot, sticker *tg.Sticker) (string, error) {
 	}
 
 	filename := fmt.Sprintf("%s.png", uuid.New().String())
-	filePath := filepath.Join(TempDir, filename)
+	filePath := filepath.Join(utils.TempDir, filename)
 
 	outFile, err := os.Create(filePath)
 	if err != nil {
