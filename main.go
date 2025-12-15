@@ -231,7 +231,24 @@ func main() {
 	})
 
 	bot.Handle("/list", func(ctx tg.Context) error {
-		return handlers.HandleListPacks(ctx, database.Packs, database.Users)
+		args := strings.Fields(ctx.Text())
+		page := 1
+
+		if len(args) >= 2 {
+			if parsedPage, err := strconv.Atoi(args[1]); err == nil && parsedPage > 0 {
+				page = parsedPage
+			}
+		}
+
+		return handlers.HandleListPacks(ctx, page, database.Packs, database.Users)
+	})
+
+	bot.Handle(&tg.InlineButton{Unique: "list_page"}, func(ctx tg.Context) error {
+		return handlers.HandleListCallback(ctx, database.Packs, database.Users)
+	})
+
+	bot.Handle(&tg.InlineButton{Unique: "list_noop"}, func(ctx tg.Context) error {
+		return ctx.Respond()
 	})
 
 	bot.Handle("/delete", func(ctx tg.Context) error {
@@ -242,12 +259,12 @@ func main() {
 			return ctx.Send(utils.T(lang, "delete-usage"))
 		}
 
-		packID, err := strconv.ParseInt(args[1], 10, 64)
-		if err != nil {
+		relativeID, err := strconv.Atoi(args[1])
+		if err != nil || relativeID < 1 {
 			return ctx.Send(utils.T(lang, "delete-usage"))
 		}
 
-		return handlers.HandleDeletePack(ctx, packID, database.Packs, database.Users)
+		return handlers.HandleDeletePack(ctx, relativeID, database.Packs, database.Users)
 	})
 
 	bot.Handle("/cancel", func(ctx tg.Context) error {
