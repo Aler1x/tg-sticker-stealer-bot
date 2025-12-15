@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed SQLite-specific dependencies from Dockerfile
 - Updated documentation to reflect PostgreSQL setup
 
+### Removed
+- Pack tracking system (`/list` and `/delete` commands)
+- Pack storage in database (packs are only created on Telegram, not stored in bot database)
+- `Pack` model and `PackRepository`
+
 ## [1.0.0] - 2025-10-26
 
 ### Initial realease of bot
@@ -22,9 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Copy sticker packs
 - Copy emoji packs
-- List packs
-- Delete packs
-- Broadcast messages to all users (admin only)
+- Download packs as ZIP
+- Convert images to stickers
+- Convert stickers to images
+- Settings for default action
+- Multi-language support (English, Ukrainian, Polish)
 - View bot statistics (admin only)
 
 ## Internal changes

@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"strings"
-	"tg-sticker-stiller-bot/db"
 	"tg-sticker-stiller-bot/types"
 	"tg-sticker-stiller-bot/utils"
 	"time"
@@ -13,7 +12,7 @@ import (
 
 type ProgressCallback func(current, total int)
 
-func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, stickers []tg.Sticker, stickerType types.StickerType, packs *db.PackRepository, progressCallback ProgressCallback) (string, error) {
+func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, stickers []tg.Sticker, stickerType types.StickerType, progressCallback ProgressCallback) (string, error) {
 	downloadedStickers := DownloadAllStickers(bot, stickers)
 	if len(downloadedStickers) == 0 {
 		utils.Logger("error", "No stickers could be downloaded", map[string]any{"userId": userID})
@@ -33,16 +32,13 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 
 	var telegramStickerType tg.StickerSetType
 	var packLink string
-	var dbPackType db.PackType
 
 	if stickerType == types.StickerTypeEmoji {
 		telegramStickerType = tg.StickerCustomEmoji
 		packLink = fmt.Sprintf("https://t.me/addemoji/%s", setName)
-		dbPackType = db.PackTypeEmoji
 	} else {
 		telegramStickerType = tg.StickerRegular
 		packLink = fmt.Sprintf("https://t.me/addstickers/%s", setName)
-		dbPackType = db.PackTypeSticker
 	}
 
 	firstSticker := downloadedStickers[0]
@@ -122,20 +118,6 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 
 		if i < totalStickers-1 && i%5 != 0 {
 			time.Sleep(time.Millisecond)
-		}
-	}
-
-	if packs != nil {
-		pack := &db.Pack{
-			UserID:       userID,
-			PackName:     setName,
-			PackTitle:    title,
-			PackType:     dbPackType,
-			PackLink:     packLink,
-			StickerCount: len(downloadedStickers),
-		}
-		if err := packs.Create(pack); err != nil {
-			utils.Logger("error", "Failed to save pack to database", map[string]any{"error": err.Error()})
 		}
 	}
 

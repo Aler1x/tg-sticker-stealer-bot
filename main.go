@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"tg-sticker-stiller-bot/db"
@@ -25,8 +24,6 @@ func GetCommands(lang string) []tg.Command {
 		{Text: "/download", Description: utils.T(lang, "download-command")},
 		{Text: "/settings", Description: utils.T(lang, "settings-command")},
 		{Text: "/language", Description: utils.T(lang, "language-command")},
-		{Text: "/list", Description: utils.T(lang, "list-command")},
-		{Text: "/delete", Description: utils.T(lang, "delete-command")},
 		{Text: "/cancel", Description: utils.T(lang, "cancel-command")},
 	}
 }
@@ -230,26 +227,6 @@ func main() {
 		return handlers.HandleLanguageCallback(ctx, database.Users)
 	})
 
-	bot.Handle("/list", func(ctx tg.Context) error {
-		return handlers.HandleListPacks(ctx, database.Packs, database.Users)
-	})
-
-	bot.Handle("/delete", func(ctx tg.Context) error {
-		userID := ctx.Sender().ID
-		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
-		args := strings.Fields(ctx.Text())
-		if len(args) < 2 {
-			return ctx.Send(utils.T(lang, "delete-usage"))
-		}
-
-		packID, err := strconv.ParseInt(args[1], 10, 64)
-		if err != nil {
-			return ctx.Send(utils.T(lang, "delete-usage"))
-		}
-
-		return handlers.HandleDeletePack(ctx, packID, database.Packs, database.Users)
-	})
-
 	bot.Handle("/cancel", func(ctx tg.Context) error {
 		userID := ctx.Sender().ID
 		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
@@ -276,7 +253,7 @@ func main() {
 
 		switch session.State {
 		case services.StateWaitingForPackName:
-			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Packs, database.Users)
+			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Users)
 
 		default:
 			var packName string

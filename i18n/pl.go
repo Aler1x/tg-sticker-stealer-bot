@@ -2,13 +2,11 @@ package i18n
 
 var Pl = map[string]string{
 	"hello":   "Cześć",
-	"welcome": "Witaj w Sticker & Emoji Stiller @%s!\n\nKomendy:\n/copy <link> - skopiuj paczkę\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n/list - twoje utworzone paczki\n/delete <id> - usuń paczkę\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
-	"help":    "Komendy:\n/copy <link> - skopiuj paczkę\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n/list - twoje utworzone paczki\n/delete <id> - usuń paczkę\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
+	"welcome": "Witaj w Sticker & Emoji Stiller @%s!\n\nKomendy:\n/copy <link> - skopiuj paczkę\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
+	"help":    "Komendy:\n/copy <link> - skopiuj paczkę\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
 
 	"start-command":    "Uruchom (lub zrestartuj) bota",
 	"help-command":     "Pokaż wiadomość pomocy",
-	"list-command":     "Wyświetl swoje paczki",
-	"delete-command":   "Usuń paczkę po ID",
 	"copy-command":     "Skopiuj paczkę naklejek/emoji",
 	"download-command": "Pobierz paczkę jako ZIP",
 	"settings-command": "Ustaw domyślną akcję dla linków",
@@ -31,13 +29,7 @@ var Pl = map[string]string{
 	"pack-type":    "naklejek",
 	"emoji-type":   "emoji",
 
-	"list-empty":       "Nie utworzyłeś jeszcze żadnych paczek.",
-	"list-header":      "📦 Twoje paczki:\n\n",
-	"list-item":        "%d. %s (%s) - %d elementów\n %s\n\n",
-	"delete-success":   "✅ Paczka usunięta pomyślnie!",
-	"delete-not-found": "Paczka nie została znaleziona lub nie masz uprawnień do jej usunięcia.",
-	"delete-usage":     "Użycie: /delete <pack_id>\n\nUżyj /list aby zobaczyć swoje paczki i ich ID.",
-	"cancel-command":   "Anuluj bieżącą operację",
+	"cancel-command": "Anuluj bieżącą operację",
 
 	"settings-prompt":  "Obecna domyślna akcja: %s\n\nWybierz domyślną akcję dla linków do paczek:",
 	"settings-saved":   "Ustawienia zapisane!",

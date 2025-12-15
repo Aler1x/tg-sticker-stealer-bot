@@ -10,7 +10,6 @@ import (
 
 type DB struct {
 	*gorm.DB
-	Packs *PackRepository
 	Users *UserRepository
 }
 
@@ -22,13 +21,12 @@ func New(dsn string) (*DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	if err := conn.AutoMigrate(&Pack{}, &User{}); err != nil {
+	if err := conn.AutoMigrate(&User{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate schema: %w", err)
 	}
 
 	return &DB{
 		DB:    conn,
-		Packs: &PackRepository{db: conn},
 		Users: &UserRepository{db: conn},
 	}, nil
 }

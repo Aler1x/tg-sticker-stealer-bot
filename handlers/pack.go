@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"os"
-	"sort"
 	"tg-sticker-stiller-bot/db"
 	"tg-sticker-stiller-bot/services"
 	"tg-sticker-stiller-bot/types"
@@ -116,7 +115,7 @@ func HandleDownloadPack(ctx tg.Context, packName string, packType types.StickerT
 	return ctx.Send(doc)
 }
 
-func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, packs *db.PackRepository, users *db.UserRepository) error {
+func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, users *db.UserRepository) error {
 	userID := ctx.Sender().ID
 	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
@@ -154,7 +153,7 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 		}
 	}
 
-	packLink, err := services.CreateStickerSet(bot, userID, bot.Me.Username, userInput, session.OriginalItems, session.PackType, packs, progressCallback)
+	packLink, err := services.CreateStickerSet(bot, userID, bot.Me.Username, userInput, session.OriginalItems, session.PackType, progressCallback)
 	if err != nil {
 		if progressMsg != nil {
 			ctx.Bot().Delete(progressMsg)
@@ -181,48 +180,4 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 	return nil
 }
 
-func HandleListPacks(ctx tg.Context, packs *db.PackRepository, users *db.UserRepository) error {
-	userID := ctx.Sender().ID
-	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
 
-	packList, err := packs.GetByUserID(userID)
-	if err != nil {
-		utils.Logger("error", "Error getting packs for user", map[string]any{
-			"userId": userID,
-			"error":  err.Error(),
-		})
-		return ctx.Send(utils.T(lang, "error"))
-	}
-
-	if len(packList) == 0 {
-		return ctx.Send(utils.T(lang, "list-empty"))
-	}
-
-	sort.Slice(packList, func(i, j int) bool {
-		return packList[i].ID < packList[j].ID
-	})
-
-	message := utils.T(lang, "list-header")
-	for _, pack := range packList {
-		message += utils.T(lang, "list-item", pack.ID, pack.PackTitle, pack.PackType, pack.StickerCount, pack.PackLink)
-	}
-
-	return ctx.Send(message)
-}
-
-func HandleDeletePack(ctx tg.Context, packID int64, packs *db.PackRepository, users *db.UserRepository) error {
-	userID := ctx.Sender().ID
-	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
-
-	err := packs.Delete(packID, userID)
-	if err != nil {
-		utils.Logger("error", "Error deleting pack", map[string]any{
-			"packId": packID,
-			"userId": userID,
-			"error":  err.Error(),
-		})
-		return ctx.Send(utils.T(lang, "delete-not-found"))
-	}
-
-	return ctx.Send(utils.T(lang, "delete-success"))
-}
