@@ -13,7 +13,7 @@ import (
 
 type ProgressCallback func(current, total int)
 
-func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, stickers []tg.Sticker, stickerType types.StickerType, repo *db.Repository, progressCallback ProgressCallback) (string, error) {
+func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, stickers []tg.Sticker, stickerType types.StickerType, packs *db.PackRepository, progressCallback ProgressCallback) (string, error) {
 	downloadedStickers := DownloadAllStickers(bot, stickers)
 	if len(downloadedStickers) == 0 {
 		utils.Logger("error", "No stickers could be downloaded", map[string]any{"userId": userID})
@@ -45,7 +45,6 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 		dbPackType = db.PackTypeSticker
 	}
 
-	// Create set with first sticker only
 	firstSticker := downloadedStickers[0]
 	emoji := firstSticker.Sticker.Emoji
 	if emoji == "" {
@@ -86,10 +85,8 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 		return "", err
 	}
 
-	// Add remaining stickers one by one
 	totalStickers := len(downloadedStickers)
 
-	// start from 0 more user friendly
 	if progressCallback != nil && totalStickers > 1 {
 		progressCallback(0, totalStickers)
 	}
@@ -115,23 +112,20 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 				"total":   totalStickers,
 				"error":   err.Error(),
 			})
-			// Continue adding other stickers even if one fails
 		}
 
-		// Update progress every 10 stickers or on the last one
 		if progressCallback != nil {
 			if (i+1)%10 == 0 || i+1 == totalStickers {
 				progressCallback(i+1, totalStickers)
 			}
 		}
 
-		// Delay to avoid rate limiting (1ms between 5 stickers)
 		if i < totalStickers-1 && i%5 != 0 {
 			time.Sleep(time.Millisecond)
 		}
 	}
 
-	if repo != nil {
+	if packs != nil {
 		pack := &db.Pack{
 			UserID:       userID,
 			PackName:     setName,
@@ -140,7 +134,7 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 			PackLink:     packLink,
 			StickerCount: len(downloadedStickers),
 		}
-		if err := repo.CreatePack(pack); err != nil {
+		if err := packs.Create(pack); err != nil {
 			utils.Logger("error", "Failed to save pack to database", map[string]any{"error": err.Error()})
 		}
 	}

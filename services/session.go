@@ -14,8 +14,16 @@ const (
 	StateWaitingForPackName SessionState = "waiting_for_pack_name"
 )
 
+type PackAction string
+
+const (
+	ActionCopy     PackAction = "copy"
+	ActionDownload PackAction = "download"
+)
+
 type Session struct {
 	State            SessionState
+	Action           PackAction
 	OriginalPackName string
 	OriginalItems    []tg.Sticker
 	Title            string

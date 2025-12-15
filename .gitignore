@@ -27,7 +27,7 @@ go.work.sum
 # env file
 .env
 
-# Data directory (temp files and database)
+# Data directory (temp files)
 data/temp/*
 data/*.db
 !data/.gitkeep

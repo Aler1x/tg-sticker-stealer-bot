@@ -22,6 +22,11 @@ func getTemplate(lang string, key string) string {
 			return val
 		}
 		return i18n.En[key]
+	case "pl":
+		if val, ok := i18n.Pl[key]; ok {
+			return val
+		}
+		return i18n.En[key]
 	case "en":
 		return i18n.En[key]
 	default:
