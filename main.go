@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"tg-sticker-stiller-bot/db"
@@ -227,7 +226,6 @@ func main() {
 	bot.Handle(&tg.InlineButton{Unique: "set_language"}, func(ctx tg.Context) error {
 		return handlers.HandleLanguageCallback(ctx, database.Users)
 	})
-
 
 	bot.Handle("/cancel", func(ctx tg.Context) error {
 		userID := ctx.Sender().ID
