@@ -10,6 +10,7 @@ import (
 	tg "gopkg.in/telebot.v4"
 
 	"tg-sticker-stiller-bot/db"
+	"tg-sticker-stiller-bot/services"
 	"tg-sticker-stiller-bot/utils"
 )
 
@@ -66,4 +67,48 @@ func HandleAdminStats(ctx tg.Context, database *db.DB) error {
 	)
 
 	return ctx.Send(stats, &tg.SendOptions{ParseMode: tg.ModeMarkdown})
+}
+
+func HandleAdminStickerByID(ctx tg.Context, sessions *services.SessionStore) error {
+	if !IsAdmin(ctx.Sender().ID) {
+		return nil
+	}
+
+	args := strings.Fields(ctx.Text())
+	if len(args) < 2 {
+		userID := ctx.Sender().ID
+		sessions.Set(userID, &services.Session{
+			State: services.StateWaitingForSticker,
+		})
+		return ctx.Send("Send a sticker to get its ID, or /cancel to abort.")
+	}
+
+	stickerID := args[1]
+	sticker := tg.Sticker{File: tg.File{FileID: stickerID}}
+	
+	if err := ctx.Send(&sticker); err != nil {
+		utils.Logger("error", "Failed to send sticker by ID", map[string]any{
+			"stickerId": stickerID,
+			"error":     err.Error(),
+		})
+		return ctx.Send("❌ Failed to send sticker.")
+	}
+
+	return nil
+}
+
+func HandleAdminStickerIDInput(ctx tg.Context, sessions *services.SessionStore) error {
+	if !IsAdmin(ctx.Sender().ID) {
+		return nil
+	}
+
+	sticker := ctx.Message().Sticker
+	if sticker == nil {
+		return ctx.Send("Please send a sticker.")
+	}
+
+	stickerID := sticker.FileID
+	sessions.Clear(ctx.Sender().ID)
+	
+	return ctx.Send(fmt.Sprintf("Sticker ID: `%s`", stickerID), &tg.SendOptions{ParseMode: tg.ModeMarkdown})
 }

@@ -12,6 +12,7 @@ type SessionState string
 const (
 	StateIdle               SessionState = ""
 	StateWaitingForPackName SessionState = "waiting_for_pack_name"
+	StateWaitingForSticker  SessionState = "waiting_for_sticker"
 )
 
 type PackAction string

@@ -244,6 +244,10 @@ func main() {
 		return handlers.HandleAdminStats(ctx, database)
 	})
 
+	bot.Handle("/id", func(ctx tg.Context) error {
+		return handlers.HandleAdminStickerByID(ctx, sessions)
+	})
+
 	bot.Handle(tg.OnText, func(ctx tg.Context) error {
 		text := ctx.Text()
 		userID := ctx.Sender().ID
@@ -289,6 +293,13 @@ func main() {
 	})
 
 	bot.Handle(tg.OnSticker, func(ctx tg.Context) error {
+		userID := ctx.Sender().ID
+		session := sessions.Get(userID)
+		
+		if session.State == services.StateWaitingForSticker {
+			return handlers.HandleAdminStickerIDInput(ctx, sessions)
+		}
+		
 		return handlers.HandleStickerToImage(ctx, bot, database.Users)
 	})
 
