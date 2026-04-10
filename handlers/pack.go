@@ -175,7 +175,11 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 		ctx.Bot().Delete(progressMsg)
 	}
 
-	if err := database.PackCreations.Record(userID, packLink, string(session.PackType)); err != nil {
+	packTypeStr := db.PackTypeStickers
+	if session.PackType == types.StickerTypeEmoji {
+		packTypeStr = db.PackTypeEmojis
+	}
+	if err := database.PackCreations.Record(userID, packLink, packTypeStr, len(session.OriginalItems)); err != nil {
 		utils.Logger("error", "Failed to record pack creation analytics", map[string]any{
 			"userId": userID,
 			"error":  err.Error(),

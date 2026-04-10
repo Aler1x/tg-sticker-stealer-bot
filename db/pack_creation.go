@@ -8,24 +8,31 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	PackTypeStickers = "stickers"
+	PackTypeEmojis   = "emojis"
+)
+
 type PackCreation struct {
-	ID       uuid.UUID `gorm:"type:uuid;primaryKey;column:id"`
-	UserID   int64     `gorm:"column:user_id;not null;index"`
-	PackLink string    `gorm:"column:pack_link;not null"`
-	PackType string    `gorm:"column:pack_type;not null;index"`
-	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime;index"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;column:id"`
+	UserID      int64     `gorm:"column:user_id;not null;index"`
+	PackLink    string    `gorm:"column:pack_link;not null"`
+	PackType    string    `gorm:"column:pack_type;not null;index"`
+	ItemsAmount int       `gorm:"column:items_amount;not null;default:0"`
+	CreatedAt   time.Time `gorm:"column:created_at;autoCreateTime;index"`
 }
 
 type PackCreationRepository struct {
 	db *gorm.DB
 }
 
-func (r *PackCreationRepository) Record(userID int64, packLink, packType string) error {
+func (r *PackCreationRepository) Record(userID int64, packLink, packType string, itemsAmount int) error {
 	row := &PackCreation{
-		ID:       uuid.New(),
-		UserID:   userID,
-		PackLink: packLink,
-		PackType: packType,
+		ID:          uuid.New(),
+		UserID:      userID,
+		PackLink:    packLink,
+		PackType:    packType,
+		ItemsAmount: itemsAmount,
 	}
 	if err := r.db.Create(row).Error; err != nil {
 		return fmt.Errorf("failed to record pack creation: %w", err)
@@ -33,28 +40,24 @@ func (r *PackCreationRepository) Record(userID int64, packLink, packType string)
 	return nil
 }
 
-type PackTypeAggregate struct {
-	PackType string `gorm:"column:pack_type"`
-	Count    int64  `gorm:"column:cnt"`
-}
-
-func (r *PackCreationRepository) TotalCount() (int64, error) {
+func (r *PackCreationRepository) CountStickerPacks() (int64, error) {
 	var n int64
-	if err := r.db.Model(&PackCreation{}).Count(&n).Error; err != nil {
-		return 0, fmt.Errorf("failed to count pack creations: %w", err)
+	err := r.db.Model(&PackCreation{}).
+		Where("pack_type IN ?", []string{PackTypeStickers, "regular"}).
+		Count(&n).Error
+	if err != nil {
+		return 0, fmt.Errorf("failed to count sticker pack creations: %w", err)
 	}
 	return n, nil
 }
 
-func (r *PackCreationRepository) CountByPackType() ([]PackTypeAggregate, error) {
-	var rows []PackTypeAggregate
+func (r *PackCreationRepository) CountEmojiPacks() (int64, error) {
+	var n int64
 	err := r.db.Model(&PackCreation{}).
-		Select("pack_type, COUNT(*) AS cnt").
-		Group("pack_type").
-		Order("pack_type").
-		Scan(&rows).Error
+		Where("pack_type IN ?", []string{PackTypeEmojis, "custom_emoji"}).
+		Count(&n).Error
 	if err != nil {
-		return nil, fmt.Errorf("failed to aggregate pack types: %w", err)
+		return 0, fmt.Errorf("failed to count emoji pack creations: %w", err)
 	}
-	return rows, nil
+	return n, nil
 }

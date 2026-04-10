@@ -59,28 +59,27 @@ func HandleAdminStats(ctx tg.Context, database *db.DB) error {
 		return ctx.Send("❌ Failed to fetch statistics.")
 	}
 
-	packTotal, err := database.PackCreations.TotalCount()
+	stickerPacks, err := database.PackCreations.CountStickerPacks()
 	if err != nil {
-		utils.Logger("error", "Failed to get pack creation count", map[string]any{"error": err.Error()})
+		utils.Logger("error", "Failed to count sticker pack creations", map[string]any{"error": err.Error()})
 		return ctx.Send("❌ Failed to fetch statistics.")
 	}
 
-	byType, err := database.PackCreations.CountByPackType()
+	emojiPacks, err := database.PackCreations.CountEmojiPacks()
 	if err != nil {
-		utils.Logger("error", "Failed to aggregate pack types", map[string]any{"error": err.Error()})
+		utils.Logger("error", "Failed to count emoji pack creations", map[string]any{"error": err.Error()})
 		return ctx.Send("❌ Failed to fetch statistics.")
 	}
 
 	stats := fmt.Sprintf(
 		"*Bot Statistics*\n\n"+
 			"Active users: `%d`\n"+
-			"Packs created (recorded): `%d`",
+			"Stickerpacks created: `%d`\n"+
+			"Emojipacks created: `%d`",
 		userCount,
-		packTotal,
+		stickerPacks,
+		emojiPacks,
 	)
-	for _, row := range byType {
-		stats += fmt.Sprintf("\n  • `%s`: `%d`", row.PackType, row.Count)
-	}
 
 	return ctx.Send(stats, &tg.SendOptions{ParseMode: tg.ModeMarkdown})
 }
