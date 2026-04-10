@@ -253,7 +253,7 @@ func main() {
 
 		switch session.State {
 		case services.StateWaitingForPackName:
-			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database.Users)
+			return handlers.HandlePackNameInput(ctx, text, bot, sessions, database)
 
 		default:
 			var packName string
