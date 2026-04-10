@@ -10,7 +10,8 @@ import (
 
 type DB struct {
 	*gorm.DB
-	Users *UserRepository
+	Users         *UserRepository
+	PackCreations *PackCreationRepository
 }
 
 func New(dsn string) (*DB, error) {
@@ -21,13 +22,14 @@ func New(dsn string) (*DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	if err := conn.AutoMigrate(&User{}); err != nil {
+	if err := conn.AutoMigrate(&User{}, &PackCreation{}); err != nil {
 		return nil, fmt.Errorf("failed to migrate schema: %w", err)
 	}
 
 	return &DB{
-		DB:    conn,
-		Users: &UserRepository{db: conn},
+		DB:            conn,
+		Users:         &UserRepository{db: conn},
+		PackCreations: &PackCreationRepository{db: conn},
 	}, nil
 }
 

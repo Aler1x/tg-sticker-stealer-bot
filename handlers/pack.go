@@ -115,9 +115,9 @@ func HandleDownloadPack(ctx tg.Context, packName string, packType types.StickerT
 	return ctx.Send(doc)
 }
 
-func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, users *db.UserRepository) error {
+func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions *services.SessionStore, database *db.DB) error {
 	userID := ctx.Sender().ID
-	lang := utils.GetUserLanguage(users, userID, ctx.Message().Sender.LanguageCode)
+	lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
 
 	session := sessions.Get(userID)
 
@@ -173,6 +173,13 @@ func HandlePackNameInput(ctx tg.Context, userInput string, bot *tg.Bot, sessions
 
 	if progressMsg != nil {
 		ctx.Bot().Delete(progressMsg)
+	}
+
+	if err := database.PackCreations.Record(userID, packLink, string(session.PackType)); err != nil {
+		utils.Logger("error", "Failed to record pack creation analytics", map[string]any{
+			"userId": userID,
+			"error":  err.Error(),
+		})
 	}
 
 	ctx.Send(utils.T(lang, "success", utils.T(lang, packTypeKey), packLink))
