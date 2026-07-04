@@ -76,11 +76,13 @@ func main() {
 		poller = &tg.LongPoller{Timeout: 10 * time.Second}
 	}
 
-	bot, err := tg.NewBot(tg.Settings{
+	bot, err := newBotWithRetry(tg.Settings{
 		Token:  token,
 		Poller: poller,
 	})
-	utils.FailFast(err)
+	if err != nil {
+		utils.Fatal("Failed to initialize Telegram bot", map[string]any{"error": err.Error()})
+	}
 
 	name := bot.Me.Username
 	sessions := services.NewSessionStore()
@@ -357,4 +359,40 @@ func main() {
 
 	bot.Stop()
 	utils.Logger("info", "Bot stopped")
+}
+
+func newBotWithRetry(settings tg.Settings) (*tg.Bot, error) {
+	const maxAttempts = 10
+	delay := 2 * time.Second
+
+	var bot *tg.Bot
+	var err error
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		bot, err = tg.NewBot(settings)
+		if err == nil {
+			if attempt > 1 {
+				utils.Logger("info", "Connected to Telegram API", map[string]any{"attempt": attempt})
+			}
+			return bot, nil
+		}
+
+		utils.Logger("warn", "Failed to connect to Telegram API, retrying", map[string]any{
+			"attempt":     attempt,
+			"maxAttempts": maxAttempts,
+			"error":       err.Error(),
+			"delay":       delay.String(),
+		})
+
+		if attempt == maxAttempts {
+			break
+		}
+
+		time.Sleep(delay)
+		if delay < 30*time.Second {
+			delay *= 2
+		}
+	}
+
+	return nil, fmt.Errorf("max attempts exceeded: %w", err)
 }
