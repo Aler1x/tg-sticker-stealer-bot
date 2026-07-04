@@ -2,12 +2,13 @@ package i18n
 
 var En = map[string]string{
 	"hello":   "Hello",
-	"welcome": "Welcome to Sticker & Emoji Stiller @%s!\n\nCommands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
-	"help":    "Commands:\n/copy <link> - copy a pack\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
+	"welcome": "Welcome to Sticker & Emoji Stiller @%s!\n\nCommands:\n/copy <link> - copy a pack\n/transform <link> - convert stickers to emoji or emoji to stickers\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
+	"help":    "Commands:\n/copy <link> - copy a pack\n/transform <link> - convert stickers to emoji or emoji to stickers\n/download <link> - download pack as ZIP\n/settings - set default action\n/language - change language\n\nOr just send:\n- Pack link (uses your default action)\n- Image (converts to sticker)\n- Sticker (converts to image)",
 
 	"start-command":    "Start (or restart) bot",
 	"help-command":     "Show help message",
 	"copy-command":     "Copy a sticker/emoji pack",
+	"transform-command": "Convert stickers to emoji or emoji to stickers",
 	"download-command": "Download pack as ZIP",
 	"settings-command": "Set default action for links",
 
@@ -43,6 +44,8 @@ var En = map[string]string{
 	"unsupported-format":     "Unsupported format. Please send a JPEG, PNG or WebP image.",
 
 	"copy-usage":     "Usage: /copy <pack_link>\n\nExample: /copy https://t.me/addstickers/PackName",
+	"transform-usage": "Usage: /transform <pack_link>\n\nExamples:\n/transform https://t.me/addstickers/PackName\n/transform https://t.me/addemoji/PackName",
+	"transform-stats": "🔄 Found %s pack: \"%s\"\n📊 Contains: %d items\n\nWill be converted to %s pack.\n\nWhat would you like to name your new pack?\n\nType /cancel to cancel",
 	"download-usage": "Usage: /download <pack_link>\n\nExample: /download https://t.me/addstickers/PackName",
 
 	"language-command": "Change interface language",

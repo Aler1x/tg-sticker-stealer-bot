@@ -17,8 +17,9 @@ const (
 type PackAction string
 
 const (
-	ActionCopy     PackAction = "copy"
-	ActionDownload PackAction = "download"
+	ActionCopy      PackAction = "copy"
+	ActionDownload  PackAction = "download"
+	ActionTransform PackAction = "transform"
 )
 
 type Session struct {

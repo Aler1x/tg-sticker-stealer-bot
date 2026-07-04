@@ -21,6 +21,7 @@ func GetCommands(lang string) []tg.Command {
 		{Text: "/start", Description: utils.T(lang, "start-command")},
 		{Text: "/help", Description: utils.T(lang, "help-command")},
 		{Text: "/copy", Description: utils.T(lang, "copy-command")},
+		{Text: "/transform", Description: utils.T(lang, "transform-command")},
 		{Text: "/download", Description: utils.T(lang, "download-command")},
 		{Text: "/settings", Description: utils.T(lang, "settings-command")},
 		{Text: "/language", Description: utils.T(lang, "language-command")},
@@ -178,6 +179,34 @@ func main() {
 				return ctx.Send(utils.T(lang, "invalid-link"))
 			}
 			return handlers.HandleCopyPack(ctx, packName, types.StickerTypeEmoji, bot, sessions, database.Users)
+		}
+
+		return ctx.Send(utils.T(lang, "invalid-link"))
+	})
+
+	bot.Handle("/transform", func(ctx tg.Context) error {
+		userID := ctx.Sender().ID
+		lang := utils.GetUserLanguage(database.Users, userID, ctx.Message().Sender.LanguageCode)
+		args := strings.Fields(ctx.Text())
+		if len(args) < 2 {
+			return ctx.Send(utils.T(lang, "transform-usage"))
+		}
+
+		link := args[1]
+		if utils.IsStickerPack(link) {
+			packName := utils.ExtractStickerPackName(link)
+			if packName == "" {
+				return ctx.Send(utils.T(lang, "invalid-link"))
+			}
+			return handlers.HandleTransformPack(ctx, packName, types.StickerTypeRegular, bot, sessions, database.Users)
+		}
+
+		if utils.IsEmojiPack(link) {
+			packName := utils.ExtractEmojiPackName(link)
+			if packName == "" {
+				return ctx.Send(utils.T(lang, "invalid-link"))
+			}
+			return handlers.HandleTransformPack(ctx, packName, types.StickerTypeEmoji, bot, sessions, database.Users)
 		}
 
 		return ctx.Send(utils.T(lang, "invalid-link"))

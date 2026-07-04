@@ -2,12 +2,13 @@ package i18n
 
 var Pl = map[string]string{
 	"hello":   "Cześć",
-	"welcome": "Witaj w Sticker & Emoji Stiller @%s!\n\nKomendy:\n/copy <link> - skopiuj paczkę\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
-	"help":    "Komendy:\n/copy <link> - skopiuj paczkę\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
+	"welcome": "Witaj w Sticker & Emoji Stiller @%s!\n\nKomendy:\n/copy <link> - skopiuj paczkę\n/transform <link> - konwertuj naklejki na emoji lub emoji na naklejki\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
+	"help":    "Komendy:\n/copy <link> - skopiuj paczkę\n/transform <link> - konwertuj naklejki na emoji lub emoji na naklejki\n/download <link> - pobierz jako ZIP\n/settings - ustaw domyślną akcję\n/language - zmień język\n\nLub po prostu wyślij:\n- Link do paczki (użyje domyślnej akcji)\n- Obraz (konwertuje na naklejkę)\n- Naklejkę (konwertuje na obraz)",
 
 	"start-command":    "Uruchom (lub zrestartuj) bota",
 	"help-command":     "Pokaż wiadomość pomocy",
 	"copy-command":     "Skopiuj paczkę naklejek/emoji",
+	"transform-command": "Konwertuj naklejki na emoji lub emoji na naklejki",
 	"download-command": "Pobierz paczkę jako ZIP",
 	"settings-command": "Ustaw domyślną akcję dla linków",
 
@@ -43,6 +44,8 @@ var Pl = map[string]string{
 	"unsupported-format":     "Nieobsługiwany format. Wyślij obraz JPEG, PNG lub WebP.",
 
 	"copy-usage":     "Użycie: /copy <link>\n\nPrzykład: /copy https://t.me/addstickers/PackName",
+	"transform-usage": "Użycie: /transform <link>\n\nPrzykłady:\n/transform https://t.me/addstickers/PackName\n/transform https://t.me/addemoji/PackName",
+	"transform-stats": "🔄 Znaleziono paczkę %s: \"%s\"\n📊 Zawiera: %d elementów\n\nZostanie przekonwertowana na paczkę %s.\n\nJak chcesz nazwać swoją nową paczkę?\n\nWpisz /cancel aby anulować",
 	"download-usage": "Użycie: /download <link>\n\nPrzykład: /download https://t.me/addstickers/PackName",
 
 	"language-command": "Zmień język interfejsu",
