@@ -19,11 +19,38 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 		return "", fmt.Errorf("no stickers could be downloaded")
 	}
 
-	filePaths := make([]string, len(downloadedStickers))
-	for i, ds := range downloadedStickers {
-		filePaths[i] = ds.Path
+	filePaths := make([]string, 0, len(downloadedStickers)*2)
+	preparedStickers := make([]types.DownloadedSticker, 0, len(downloadedStickers))
+
+	for _, ds := range downloadedStickers {
+		filePaths = append(filePaths, ds.Path)
+
+		preparedPath, err := PrepareStickerForSet(ds.Path, ds.Sticker, stickerType)
+		if err != nil {
+			utils.Logger("warn", "Failed to prepare sticker for set, skipping", map[string]any{
+				"fileId": ds.Sticker.FileID,
+				"error":  err.Error(),
+			})
+			continue
+		}
+
+		if preparedPath != ds.Path {
+			filePaths = append(filePaths, preparedPath)
+		}
+
+		preparedStickers = append(preparedStickers, types.DownloadedSticker{
+			Path:    preparedPath,
+			Sticker: ds.Sticker,
+		})
 	}
 	defer utils.CleanupFiles(filePaths)
+
+	if len(preparedStickers) == 0 {
+		utils.Logger("error", "No stickers could be prepared", map[string]any{"userId": userID})
+		return "", fmt.Errorf("no stickers could be prepared")
+	}
+
+	downloadedStickers = preparedStickers
 
 	normalizedName := utils.NormalizePackName(title)
 	setName := utils.GenerateSetName(normalizedName, botname)

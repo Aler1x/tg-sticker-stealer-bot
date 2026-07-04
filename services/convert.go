@@ -16,10 +16,6 @@ import (
 	tg "gopkg.in/telebot.v4"
 )
 
-const (
-	maxStickerDimension = 512
-)
-
 func ConvertImageToSticker(bot *tg.Bot, photo *tg.Photo) (string, error) {
 	if photo == nil || photo.FileID == "" {
 		return "", fmt.Errorf("no photo provided")
