@@ -74,21 +74,20 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 		emoji = "😀"
 	}
 
-	firstInput := tg.InputSticker{
-		File:     tg.FromDisk(firstSticker.Path),
-		Format:   utils.GetStickerFormat(firstSticker.Sticker),
-		Emojis:   []string{emoji},
-		Keywords: []string{},
-	}
-
-	stickerSet := &tg.StickerSet{
-		Type:  telegramStickerType,
-		Name:  setName,
-		Title: title,
-		Input: []tg.InputSticker{firstInput},
-	}
-
-	err := bot.CreateStickerSet(user, stickerSet)
+	err := utils.CallWithFloodRetry(func() error {
+		stickerSet := &tg.StickerSet{
+			Type:  telegramStickerType,
+			Name:  setName,
+			Title: title,
+			Input: []tg.InputSticker{{
+				File:     tg.FromDisk(firstSticker.Path),
+				Format:   utils.GetStickerFormat(firstSticker.Sticker),
+				Emojis:   []string{emoji},
+				Keywords: []string{},
+			}},
+		}
+		return bot.CreateStickerSet(user, stickerSet)
+	})
 	if err != nil {
 		if isNameTakenError(err) {
 			utils.Logger("warn", "Sticker set name already exists", map[string]any{
@@ -109,9 +108,10 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 	}
 
 	totalStickers := len(downloadedStickers)
+	addedCount := 1
 
 	if progressCallback != nil && totalStickers > 1 {
-		progressCallback(0, totalStickers)
+		progressCallback(1, totalStickers)
 	}
 
 	for i := 1; i < totalStickers; i++ {
@@ -121,20 +121,22 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 			emoji = "😀"
 		}
 
-		inputSticker := tg.InputSticker{
-			File:     tg.FromDisk(stickerData.Path),
-			Format:   utils.GetStickerFormat(stickerData.Sticker),
-			Emojis:   []string{emoji},
-			Keywords: []string{},
-		}
-
-		err := bot.AddStickerToSet(user, setName, inputSticker)
+		err := utils.CallWithFloodRetry(func() error {
+			return bot.AddStickerToSet(user, setName, tg.InputSticker{
+				File:     tg.FromDisk(stickerData.Path),
+				Format:   utils.GetStickerFormat(stickerData.Sticker),
+				Emojis:   []string{emoji},
+				Keywords: []string{},
+			})
+		})
 		if err != nil {
 			utils.Logger("warn", "Failed to add sticker to set", map[string]any{
 				"current": i + 1,
 				"total":   totalStickers,
 				"error":   err.Error(),
 			})
+		} else {
+			addedCount++
 		}
 
 		if progressCallback != nil {
@@ -143,9 +145,21 @@ func CreateStickerSet(bot *tg.Bot, userID int64, botname string, title string, s
 			}
 		}
 
-		if i < totalStickers-1 && i%5 != 0 {
-			time.Sleep(time.Millisecond)
+		if i < totalStickers-1 {
+			time.Sleep(utils.StickerUploadPace())
 		}
+	}
+
+	if addedCount == 0 {
+		return "", fmt.Errorf("no stickers could be added to the set")
+	}
+
+	if addedCount < totalStickers {
+		utils.Logger("warn", "Sticker set created with missing items", map[string]any{
+			"userId": userID,
+			"added":  addedCount,
+			"total":  totalStickers,
+		})
 	}
 
 	return packLink, nil
